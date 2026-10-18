@@ -32,7 +32,12 @@ function switchToPage(page) {
 }
 
 document.querySelectorAll(".nav button").forEach((btn) => {
-  btn.addEventListener("click", () => switchToPage(btn.dataset.page));
+  btn.addEventListener("click", () => {
+    switchToPage(btn.dataset.page);
+    // Clicking the PiP tab toggles PiP right away (needs the user gesture,
+    // so only on a real click — not when restoring last_tab)
+    if (btn.dataset.page === "pip") enterPiP();
+  });
 });
 
 // Restore last open tab — deferred so the default page paints first
