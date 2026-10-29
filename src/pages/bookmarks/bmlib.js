@@ -1,5 +1,6 @@
 // ═══════════════════════════════════
 //  Bookmark tools — shared helpers for bookmarks.html (Inbox, Dead links, Tidy)
+//  and the closed-tabs page (which moves tabs to the inbox)
 //
 //  Reads go straight to chrome.bookmarks. Every write goes through BM.applyBatch,
 //  which the background journals, so each batch shows up in the popup's
@@ -8,6 +9,7 @@
 const BM = (() => {
   const ROOT_TYPES = { "bookmarks-bar": "bar", other: "other", mobile: "mobile" };
   const LEGACY_ROOT_IDS = { 1: "bar", 2: "other", 3: "mobile" }; // Chrome < 134 has no folderType
+  const INBOX_KEY = "triage_inbox_id";
 
   // Query parameters that only track where a click came from. Removing them never
   // changes which page a URL opens.
@@ -47,6 +49,20 @@ const BM = (() => {
     const ignored = candidates.filter((n) => !picked.has(n) && n.children?.length).map((n) => n.title);
     for (const root of picked) link(root, null);
     return { roots, byId, ignored };
+  }
+
+  /**
+   * The inbox folder: the one picked in the Inbox view, else Mobile bookmarks, else
+   * Other bookmarks (when Chrome hides an empty Mobile folder).
+   */
+  async function inbox(model) {
+    const { [INBOX_KEY]: id } = await chrome.storage.local.get([INBOX_KEY]);
+    const chosen = model.byId.get(id);
+    return chosen && chosen.url === undefined ? chosen : model.roots.mobile ?? model.roots.other;
+  }
+
+  function setInbox(folderId) {
+    return chrome.storage.local.set({ [INBOX_KEY]: folderId });
   }
 
   /** "Bookmarks bar/Work/Code" for a folder; for a bookmark, the folder it is in. */
@@ -122,13 +138,16 @@ const BM = (() => {
    * protocol: create {ref, parentId, index?, title, url?}, move {id, parentId, index?},
    * update {id, title?, url?}, remove {id} (folders only when empty).
    * Resolves to {done, created}; throws if Chrome rejected an op (the ones before it
-   * stay applied and are in the journal).
+   * stay applied and are in the journal; the error's `done` counts them).
    */
   async function applyBatch(ops, label) {
     if (!ops.length) return { done: 0, created: {} };
     const result = await chrome.runtime.sendMessage({ type: "bookmarkApplyBatch", ops, label });
     if (!result) throw new Error("No answer from the background");
-    if (result.error) throw new Error(`${result.error} (after ${result.done ?? 0} of ${ops.length} changes)`);
+    if (result.error) {
+      const done = result.done ?? 0;
+      throw Object.assign(new Error(`${result.error} (after ${done} of ${ops.length} changes)`), { done });
+    }
     return result;
   }
 
@@ -164,7 +183,7 @@ const BM = (() => {
     return node;
   }
 
-  return { load, path, bookmarksUnder, folders, site, stripTracking, normalizeUrl, applyBatch, favicon, onChanged, el };
+  return { load, inbox, setInbox, path, bookmarksUnder, folders, site, stripTracking, normalizeUrl, applyBatch, favicon, onChanged, el };
 })();
 
 // Views of bookmarks.html register here (see bookmarks.js).

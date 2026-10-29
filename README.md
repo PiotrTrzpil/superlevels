@@ -70,7 +70,7 @@ The popup is grouped like this. On X, YouTube and Photopea it opens on 🌐 Site
 #### 🚮 Tab Cleaner
 Closes tabs you haven't looked at for a while (default: 3 days; you can set minutes, hours or days). Time away from the computer, with the screen locked, or with Chrome closed doesn't count, so a long weekend doesn't empty your browser. It never closes the active tab, pinned tabs, tabs playing audio, incognito tabs, or the last tab in a window. Excluded hosts (and their subdomains) are never closed.
 
-Closed tabs go to a OneTab-style list, opened in the background, grouped by day. Click a tab to reopen it, or reopen or delete a whole day at once. The list keeps the last 2,000 tabs.
+Closed tabs go to a OneTab-style list, opened in the background, grouped by day. Click a tab to reopen it, or reopen or delete a whole day at once. 🔖 moves a tab, a day, or every tab the filter shows to the bookmarks inbox (the folder the Inbox page files from, Mobile bookmarks by default), one bookmark per page, skipping pages already there. It's one batch you can undo from the popup. The list keeps the last 2,000 tabs.
 
 #### 🔖 Bookmark tools
 The 🔖 Bookmarks page opens three tools in a tab of their own. None of them changes anything until you apply it, and every change is applied as one batch that you can undo from the popup.

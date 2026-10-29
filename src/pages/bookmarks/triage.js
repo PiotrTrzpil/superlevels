@@ -20,11 +20,6 @@ const Triage = (() => {
     return false;
   }
 
-  /** Mobile bookmarks, or Other bookmarks when Chrome has no Mobile folder. */
-  function defaultInbox(model) {
-    return model.roots.mobile ?? model.roots.other;
-  }
-
   /**
    * Where bookmarks outside the inbox are filed: the first folder holding each
    * normalized URL, and per site how many bookmarks sit in each folder. Bookmarks
@@ -187,7 +182,7 @@ const Triage = (() => {
     return `Inbox: ${parts.join(", ")}`;
   }
 
-  return { defaultInbox, isUnder, buildStats, suggest, suggestAll, resolvePath, targetOf, holdsUrl, planOps, batchLabel };
+  return { isUnder, buildStats, suggest, suggestAll, resolvePath, targetOf, holdsUrl, planOps, batchLabel };
 })();
 
 // ═══ View ═══
@@ -196,7 +191,6 @@ BM_VIEWS.push({
   title: "📥 Inbox",
   init(container) {
     const { el } = BM;
-    const INBOX_KEY = "triage_inbox_id";
     const PENDING_KEY = "triage_pending";
     const plural = (n) => (n === 1 ? "" : "s");
 
@@ -227,9 +221,8 @@ BM_VIEWS.push({
 
     async function refresh() {
       model = await BM.load();
-      const stored = await chrome.storage.local.get([INBOX_KEY, PENDING_KEY]);
-      const chosen = model.byId.get(stored[INBOX_KEY]);
-      inbox = chosen && chosen.url === undefined ? chosen : Triage.defaultInbox(model);
+      inbox = await BM.inbox(model);
+      const stored = await chrome.storage.local.get([PENDING_KEY]);
       items = BM.bookmarksUnder(inbox);
       suggestions = Triage.suggestAll(model, inbox);
       pending = stored[PENDING_KEY] ?? {};
@@ -250,7 +243,7 @@ BM_VIEWS.push({
     // ═══ Actions ═══
 
     async function pickInbox() {
-      await chrome.storage.local.set({ [INBOX_KEY]: picker.value });
+      await BM.setInbox(picker.value);
       status.textContent = "";
       await refresh();
     }

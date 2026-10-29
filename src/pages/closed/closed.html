@@ -63,13 +63,18 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .item .time { color: #555; font-size: 11px; flex-shrink: 0; }
-    .item .remove {
+    .item .action {
       background: none; border: none; color: #555;
       font-size: 16px; line-height: 1; cursor: pointer;
       padding: 0 4px; visibility: hidden;
     }
-    .item:hover .remove { visibility: visible; }
+    .item .action:not(.remove) { font-size: 13px; opacity: 0.6; }
+    .item:hover .action { visibility: visible; }
+    .item .action:not(.remove):hover { opacity: 1; }
     .item .remove:hover { color: #e94560; }
+
+    .status { color: #888; font-size: 12px; margin: -10px 0 16px; min-height: 1em; }
+    .status a { color: #e94560; }
 
     .empty { color: #555; font-size: 13px; text-align: center; padding: 60px 0; }
   </style>
@@ -80,10 +85,13 @@
       <h1>🚮 Closed Tabs</h1>
       <span class="total" id="total"></span>
       <input type="search" id="filter" placeholder="Filter by title or URL">
+      <button class="link" id="bookmarkAll" title="Move the tabs shown to the bookmarks inbox">Bookmark all</button>
       <button class="link" id="clearAll">Delete all</button>
     </header>
+    <div class="status" id="status"></div>
     <div id="groups"></div>
   </div>
+  <script src="../bookmarks/bmlib.js"></script>
   <script src="closed.js"></script>
 </body>
 </html>
