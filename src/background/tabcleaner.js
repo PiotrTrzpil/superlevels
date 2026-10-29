@@ -154,14 +154,20 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
   if (!(await settleAwayTime())) return;
 
-  const { exclusions = [], enabled = true, timeoutMin = DEFAULT_TIMEOUT_MIN } =
-    await chrome.storage.local.get(["exclusions", "enabled", "timeoutMin"]);
+  const { exclusions = [], enabled = true, timeoutMin = DEFAULT_TIMEOUT_MIN, closeGrouped = false } =
+    await chrome.storage.local.get(["exclusions", "enabled", "timeoutMin", "closeGrouped"]);
 
   if (!enabled) return;
 
   const now = Date.now();
   const timeoutMs = timeoutMin * 60 * 1000;
   const tabs = await chrome.tabs.query({});
+
+  // Read up front: a group disappears once its last tab is closed
+  const groups = new Map();
+  if (closeGrouped) {
+    for (const g of await chrome.tabGroups.query({})) groups.set(g.id, g);
+  }
 
   // Never close the last tab in a window
   const windowTabCounts = {};
@@ -190,6 +196,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
     // Skip pinned tabs and our own closed-tabs list
     if (tab.pinned || tab.url?.startsWith(CLOSED_PAGE_URL)) continue;
+
+    // Grouped tabs were organized on purpose; close them only when opted in
+    if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE && !closeGrouped) continue;
 
     // Skip tabs playing audio (background music, calls); the inactivity
     // timer starts once the audio stops
@@ -233,12 +242,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   const saved = closed.filter((tab) => tab.url && !tab.url.startsWith("chrome://"));
   if (!saved.length) return;
   await updateClosedTabs((list) => [
-    ...saved.map((tab) => ({
-      id: crypto.randomUUID(),
-      url: tab.url,
-      title: tab.title || tab.url,
-      time: now,
-    })),
+    ...saved.map((tab) => {
+      const group = groups.get(tab.groupId);
+      return {
+        id: crypto.randomUUID(),
+        url: tab.url,
+        title: tab.title || tab.url,
+        time: now,
+        ...(group && { group: { title: group.title ?? "", color: group.color } }),
+      };
+    }),
     ...list,
   ]);
   await ensureClosedPage(saved[0].windowId);

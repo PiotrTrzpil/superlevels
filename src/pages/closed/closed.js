@@ -110,6 +110,14 @@ function el(tag, props = {}, children = []) {
   return node;
 }
 
+// Chip for the Chrome tab group the tab was in when it was closed
+function renderTabGroup({ title, color }) {
+  return el("span", {
+    className: `tab-group tab-group-${color}`,
+    textContent: title || "Unnamed group",
+  });
+}
+
 function renderItem(t) {
   const link = el("a", { href: t.url, textContent: t.title, title: t.url });
   link.addEventListener("click", (e) => {
@@ -123,6 +131,7 @@ function renderItem(t) {
   return el("div", { className: "item" }, [
     el("img", { src: faviconUrl(t.url) }),
     link,
+    ...(t.group ? [renderTabGroup(t.group)] : []),
     el("span", { className: "host", textContent: hostOf(t.url) }),
     el("span", {
       className: "time",
@@ -156,7 +165,8 @@ function renderGroup(label, tabs) {
 function shownTabs() {
   const query = filterEl.value.trim().toLowerCase();
   return query
-    ? closedTabs.filter((t) => t.title.toLowerCase().includes(query) || t.url.toLowerCase().includes(query))
+    ? closedTabs.filter((t) =>
+        [t.title, t.url, t.group?.title].some((s) => s?.toLowerCase().includes(query)))
     : closedTabs;
 }
 

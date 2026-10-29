@@ -19,14 +19,21 @@ const hostInput = document.getElementById("hostInput");
 const addBtn = document.getElementById("addBtn");
 const listEl = document.getElementById("list");
 
-chrome.storage.local.get(["enabled", "timeoutMin", "exclusions"], (data) => {
+const closeGroupedEl = document.getElementById("closeGrouped");
+
+chrome.storage.local.get(["enabled", "timeoutMin", "exclusions", "closeGrouped"], (data) => {
   enabledEl.checked = data.enabled !== false;
+  closeGroupedEl.checked = data.closeGrouped === true;
   renderTimeout(data.timeoutMin || DEFAULT_TIMEOUT_MIN);
   renderExclusionList(data.exclusions || []);
 });
 
 enabledEl.addEventListener("change", () => {
   chrome.storage.local.set({ enabled: enabledEl.checked });
+});
+
+closeGroupedEl.addEventListener("change", () => {
+  chrome.storage.local.set({ closeGrouped: closeGroupedEl.checked });
 });
 
 function saveTimeout() {

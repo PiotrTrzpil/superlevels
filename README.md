@@ -68,9 +68,9 @@ The popup is grouped like this. On X, YouTube and Photopea it opens on 🌐 Site
 ### 🗂 Organize
 
 #### 🚮 Tab Cleaner
-Closes tabs you haven't looked at for a while (default: 3 days; you can set minutes, hours or days). Time away from the computer, with the screen locked, or with Chrome closed doesn't count, so a long weekend doesn't empty your browser. It never closes the active tab, pinned tabs, tabs playing audio, incognito tabs, or the last tab in a window. Excluded hosts (and their subdomains) are never closed.
+Closes tabs you haven't looked at for a while (default: 3 days; you can set minutes, hours or days). Time away from the computer, with the screen locked, or with Chrome closed doesn't count, so a long weekend doesn't empty your browser. It never closes the active tab, pinned tabs, tabs playing audio, incognito tabs, tabs in a tab group (unless "Also close tabs in groups" is on), or the last tab in a window. Excluded hosts (and their subdomains) are never closed.
 
-Closed tabs go to a OneTab-style list, opened in the background, grouped by day. Click a tab to reopen it, or reopen or delete a whole day at once. 🔖 moves a tab, a day, or every tab the filter shows to the bookmarks inbox (the folder the Inbox page files from, Mobile bookmarks by default), one bookmark per page, skipping pages already there. It's one batch you can undo from the popup. The list keeps the last 2,000 tabs.
+Closed tabs go to a OneTab-style list, opened in the background, grouped by day; tabs that were in a tab group carry the group's name. Click a tab to reopen it, or reopen or delete a whole day at once. 🔖 moves a tab, a day, or every tab the filter shows to the bookmarks inbox (the folder the Inbox page files from, Mobile bookmarks by default), one bookmark per page, skipping pages already there. It's one batch you can undo from the popup. The list keeps the last 2,000 tabs.
 
 #### 🔖 Bookmark tools
 The 🔖 Bookmarks page opens three tools in a tab of their own. None of them changes anything until you apply it, and every change is applied as one batch that you can undo from the popup.
@@ -211,6 +211,7 @@ The extension asks for these in `manifest.json`:
 |---|---|
 | Access to all sites (`<all_urls>`) | Content scripts (dark mode, cookie banners, Live CSS, JSON formatter), Ad Block's hiding CSS, the Trackers log, the Redirect tracer, Dead links checks |
 | `tabs`, `activeTab` | Tab Cleaner, and knowing which site the popup is acting on |
+| `tabGroups` | Tab Cleaner: leaving grouped tabs alone, or noting the group of the ones it closes |
 | `storage` | Settings, the closed-tabs list, history |
 | `alarms`, `idle` | The Tab Cleaner's once-a-minute check, and pausing it while you're away |
 | `cookies` | Cookie editor |

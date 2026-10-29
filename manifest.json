@@ -3,7 +3,7 @@
   "name": "🚀 SuperLevels",
   "version": "2.0",
   "description": "The super Chrome extension by @levelsio — dark mode, GDPR cookie dismisser, YouTube unhook, tab cleaner, cookie editor, redirect tracer, live CSS editor, X/Twitter dim mode, JS toggle, JSON formatter, music recognizer, picture-in-picture, Google Maps links, view image, Photopea ad remover, archive.is auto-redirect for paywalled articles, ad and tracker blocking, and a bookmark bridge for local scripts.",
-  "permissions": ["tabs", "storage", "alarms", "cookies", "activeTab", "webRequest", "webNavigation", "tabCapture", "contentSettings", "scripting", "bookmarks", "nativeMessaging", "favicon", "declarativeNetRequest", "idle"],
+  "permissions": ["tabs", "tabGroups", "storage", "alarms", "cookies", "activeTab", "webRequest", "webNavigation", "tabCapture", "contentSettings", "scripting", "bookmarks", "nativeMessaging", "favicon", "declarativeNetRequest", "idle"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background/index.js",

@@ -104,3 +104,21 @@ test("when Chrome rejects a bookmark, only the tabs bookmarked before it leave t
   assert.deepEqual(await listed(), ["newest", "broken"]);
   assert.deepEqual(await inboxShape(ids["C3 Inbox"]), [["oldest", "https://ok.c3/old"]]);
 });
+
+test("tabs closed from a tab group show the group's name, and the filter matches it", async () => {
+  await ext.page.evaluate((closed_tabs) => chrome.storage.local.set({ closed_tabs }), [
+    { id: "g1", title: "grouped", url: "https://grouped.c4/", time: Date.now(), group: { title: "Research", color: "blue" } },
+    { id: "g2", title: "unnamed", url: "https://unnamed.c4/", time: Date.now(), group: { title: "", color: "red" } },
+    { id: "g3", title: "loose", url: "https://loose.c4/", time: Date.now() },
+  ]);
+  const { page } = ext;
+  await page.reload();
+  await page.locator("#filter").fill("");
+  assert.equal(await item("grouped").locator(".tab-group").textContent(), "Research");
+  assert.equal(await item("unnamed").locator(".tab-group").textContent(), "Unnamed group");
+  assert.equal(await item("loose").locator(".tab-group").count(), 0);
+
+  await page.locator("#filter").fill("research");
+  await waitFor(async () => (await page.locator(".item").count()) === 1);
+  assert.equal(await page.locator(".item a").textContent(), "grouped");
+});

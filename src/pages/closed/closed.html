@@ -68,6 +68,22 @@
       color: var(--text-faint); font-size: 11px; flex: 1;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    .item .tab-group {
+      font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 999px;
+      flex-shrink: 0; max-width: 160px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--group-color); border: 1px solid var(--group-color);
+    }
+    /* Chrome's tab group colors */
+    .tab-group-grey { --group-color: #9aa0a6; }
+    .tab-group-blue { --group-color: #8ab4f8; }
+    .tab-group-red { --group-color: #f28b82; }
+    .tab-group-yellow { --group-color: #fdd663; }
+    .tab-group-green { --group-color: #81c995; }
+    .tab-group-pink { --group-color: #ff8bcb; }
+    .tab-group-purple { --group-color: #c58af9; }
+    .tab-group-cyan { --group-color: #78d9ec; }
+    .tab-group-orange { --group-color: #fcad70; }
     .item .time { color: var(--text-faint); font-variant-numeric: tabular-nums; font-size: 11px; flex-shrink: 0; }
     .item .action {
       background: none; border: none; color: var(--text-dim);
