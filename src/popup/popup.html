@@ -46,7 +46,10 @@
   <div class="page active" id="page-tabcleaner">
     <div class="page-body">
       <div class="toggle-row">
-        <label>Auto-close enabled</label>
+        <div class="toggle-text">
+          <label>Auto-close enabled</label>
+          <div class="opt-desc">Closes tabs you haven't used for a while. Pinned tabs, tabs playing audio and excluded hosts stay open.</div>
+        </div>
         <label class="switch">
           <input type="checkbox" id="enabled">
           <span class="slider"></span>
@@ -63,7 +66,10 @@
         <span>of inactivity</span>
       </div>
       <div class="toggle-row">
-        <label>Also close tabs in groups</label>
+        <div class="toggle-text">
+          <label>Also close tabs in groups</label>
+          <div class="opt-desc">Off by default: tabs you put in a group are left alone.</div>
+        </div>
         <label class="switch">
           <input type="checkbox" id="closeGrouped">
           <span class="slider"></span>
@@ -164,7 +170,7 @@
       <div class="feat" data-feat="xdim">
         <div class="feat-head">
           <span class="feat-icon">🌗</span>
-          <div class="feat-title">Dim mode<div class="feat-sub">Custom dim theme for less eye strain</div></div>
+          <div class="feat-title">Dim mode<div class="opt-desc">Custom dim theme for less eye strain</div></div>
           <span class="status off" id="xdimStatus">OFF</span>
           <label class="switch"><input type="checkbox" id="xdimToggle"><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -205,7 +211,7 @@
       <div class="feat" data-feat="xunhook">
         <div class="feat-head">
           <span class="feat-icon">🧘</span>
-          <div class="feat-title">Unhook<div class="feat-sub">Hide trends, news and Explore</div></div>
+          <div class="feat-title">Unhook<div class="opt-desc">Hide trends, news and Explore</div></div>
           <span class="status on" id="xunhookStatus">ON</span>
           <label class="switch"><input type="checkbox" id="xunhookToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -223,7 +229,7 @@
       <div class="feat" data-feat="xreply">
         <div class="feat-head">
           <span class="feat-icon">💬</span>
-          <div class="feat-title">Reply audience<div class="feat-sub">New posts: replies from people you follow</div></div>
+          <div class="feat-title">Reply audience<div class="opt-desc">New posts: replies from people you follow</div></div>
           <span class="status on" id="xreplyStatus">ON</span>
           <label class="switch"><input type="checkbox" id="xreplyToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -243,7 +249,7 @@
       <div class="feat" data-feat="unhook">
         <div class="feat-head">
           <span class="feat-icon">📺</span>
-          <div class="feat-title">Unhook<div class="feat-sub">No feed, suggestions or Shorts</div></div>
+          <div class="feat-title">Unhook<div class="opt-desc">No feed, suggestions or Shorts</div></div>
           <span class="status on" id="unhookStatus">ON</span>
           <label class="switch"><input type="checkbox" id="unhookToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -265,7 +271,7 @@
       <div class="feat" data-feat="photopea">
         <div class="feat-head">
           <span class="feat-icon">🫛</span>
-          <div class="feat-title">No ads<div class="feat-sub">Hide the ad column, full-width editor</div></div>
+          <div class="feat-title">No ads<div class="opt-desc">Hide the ad column, full-width editor</div></div>
           <span class="status on" id="photopeaStatus">ON</span>
           <label class="switch"><input type="checkbox" id="photopeaToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -318,14 +324,17 @@
       <div class="feat" data-feat="adblock">
         <div class="feat-head">
           <span class="feat-icon">🛡</span>
-          <div class="feat-title">Ad Block<div class="feat-sub" id="adblockHost"></div></div>
+          <div class="feat-title">Ad Block<div class="opt-desc" id="adblockHost"></div></div>
           <span class="status on" id="adblockStatus">ON</span>
           <label class="switch"><input type="checkbox" id="adblockToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
         </div>
         <div class="feat-body">
           <div class="toggle-row">
-            <label>Pause on this site</label>
+            <div class="toggle-text">
+              <label>Pause on this site</label>
+              <div class="opt-desc">Turns Ad Block off on this site and its subdomains, then reloads the page. Use it when a site breaks.</div>
+            </div>
             <label class="switch">
               <input type="checkbox" id="adblockPause">
               <span class="slider"></span>
@@ -338,7 +347,7 @@
           </ul>
           <div class="xdim-note">
             Chrome does the blocking itself — no page traffic passes through the extension.
-            Pause a site if it breaks. Reload open tabs after switching off.
+            Reload open tabs after switching off.
           </div>
           <div id="adblockExtras"></div>
           <div class="xdim-note" id="adblockBuild"></div>
@@ -348,7 +357,7 @@
       <div class="feat" data-feat="nocookie">
         <div class="feat-head">
           <span class="feat-icon">🍪</span>
-          <div class="feat-title">Cookie banners<div class="feat-sub">Auto-dismiss consent popups</div></div>
+          <div class="feat-title">Cookie banners<div class="opt-desc">Auto-dismiss consent popups</div></div>
           <span class="status on" id="nocookieStatus">ON</span>
           <label class="switch"><input type="checkbox" id="nocookieToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -365,7 +374,7 @@
       <div class="feat" data-feat="archive">
         <div class="feat-head">
           <span class="feat-icon">🗄</span>
-          <div class="feat-title">No paywall<div class="feat-sub">Open articles on archive.is</div></div>
+          <div class="feat-title">No paywall<div class="opt-desc">Open articles on archive.is</div></div>
           <span class="status on" id="archiveStatus">ON</span>
           <label class="switch"><input type="checkbox" id="archiveToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -417,7 +426,7 @@
       <div class="feat" data-feat="jstoggle">
         <div class="feat-head">
           <span class="feat-icon">⚡</span>
-          <div class="feat-title">JavaScript<div class="feat-sub"><span class="indicator on" id="jsIndicator"></span> <span id="jsHostLabel">Loading...</span></div></div>
+          <div class="feat-title">JavaScript<div class="opt-desc"><span class="indicator on" id="jsIndicator"></span> <span id="jsHostLabel">Loading...</span></div></div>
           <span class="status on" id="jsStatus">ENABLED</span>
           <label class="switch"><input type="checkbox" id="jsToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
@@ -430,7 +439,7 @@
       <div class="feat" data-feat="jsonformat">
         <div class="feat-head">
           <span class="feat-icon">{}</span>
-          <div class="feat-title">JSON formatter<div class="feat-sub">Pretty-print JSON responses</div></div>
+          <div class="feat-title">JSON formatter<div class="opt-desc">Pretty-print JSON responses</div></div>
           <span class="status on" id="jsonformatStatus">ON</span>
           <label class="switch"><input type="checkbox" id="jsonformatToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>

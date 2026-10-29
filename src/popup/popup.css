@@ -101,15 +101,16 @@ body {
 }
 .feat-icon { width: 22px; text-align: center; font-size: 15px; flex-shrink: 0; }
 .feat-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; }
-.feat-sub {
-  font-size: 11px; font-weight: 400; color: var(--text-dim); margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+/* Description under an option's name: feature headers, switch rows, tracker rows */
+.opt-desc {
+  font-size: 11px; font-weight: 400; color: var(--text-dim);
+  margin-top: 2px; line-height: 1.4;
 }
-.feat-sub .indicator {
+.opt-desc .indicator {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%;
 }
-.feat-sub .indicator.on { background: var(--positive-dot); }
-.feat-sub .indicator.off { background: var(--negative-dot); }
+.opt-desc .indicator.on { background: var(--positive-dot); }
+.opt-desc .indicator.off { background: var(--negative-dot); }
 .feat-head .status { font-size: 10px; font-weight: 700; }
 .feat-head .status.on { color: var(--accent); }
 .feat-head .status.off { color: var(--text-faint); }
@@ -182,6 +183,8 @@ select.field { width: auto; margin-bottom: 0; }
   border-radius: var(--radius);
 }
 .toggle-row label { font-size: 13px; font-weight: 500; }
+.toggle-row .switch { flex-shrink: 0; }
+.toggle-text { flex: 1; min-width: 0; margin-right: 12px; }
 .switch { position: relative; width: 36px; height: 20px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider {
