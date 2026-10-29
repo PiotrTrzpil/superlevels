@@ -1,16 +1,16 @@
 /* 🪦 Dead links view (deadlinks.js) */
-#view-deadlinks .dl-progress { color: #888; font-size: 12px; font-variant-numeric: tabular-nums; }
-#view-deadlinks .dl-summary { color: #888; font-size: 12px; margin-bottom: 4px; }
+#view-deadlinks .dl-progress { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+#view-deadlinks .dl-summary { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
 #view-deadlinks .dl-results { margin-top: 14px; }
 #view-deadlinks .dl-folder { margin-bottom: 8px; }
-#view-deadlinks .dl-folder-path { color: #666; font-size: 11px; padding: 4px 10px 2px; }
+#view-deadlinks .dl-folder-path { color: var(--text-dim); font-size: 11px; padding: 4px 10px 2px; }
 #view-deadlinks .row { cursor: pointer; }
-#view-deadlinks .row input[type="checkbox"] { accent-color: #e94560; flex-shrink: 0; }
+#view-deadlinks .row input[type="checkbox"] { accent-color: var(--accent); flex-shrink: 0; }
 #view-deadlinks .dl-status {
   flex-shrink: 0; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
-  padding: 2px 7px; border-radius: 4px; background: #16213e; color: #aaa;
+  padding: 2px 7px; border-radius: var(--radius-xs); background: var(--surface-3); color: var(--text-muted);
 }
-#view-deadlinks .dl-dead .dl-status { background: #4a1a26; color: #ff8fa0; }
-#view-deadlinks .dl-probable .dl-status { background: #3d2f14; color: #f0c060; }
-#view-deadlinks .dl-open { flex-shrink: 0; color: #e94560; font-size: 12px; font-weight: 600; text-decoration: none; }
-#view-deadlinks .dl-open:hover { color: #ff6b81; }
+#view-deadlinks .dl-dead .dl-status { background: var(--negative-bg); color: var(--negative); }
+#view-deadlinks .dl-probable .dl-status { background: var(--caution-bg); color: var(--caution); }
+#view-deadlinks .dl-open { flex-shrink: 0; color: var(--accent); font-size: 12px; font-weight: 600; text-decoration: none; }
+#view-deadlinks .dl-open:hover { color: var(--accent-soft); }

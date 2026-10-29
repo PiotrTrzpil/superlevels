@@ -120,7 +120,7 @@ function renderTrackers(data) {
 
   trkNote.replaceChildren();
   if (data?.source) {
-    const link = (text, href) => Object.assign(trkEl("a", "", text), { href, target: "_blank", style: "color:#888" });
+    const link = (text, href) => Object.assign(trkEl("a", "", text), { href, target: "_blank", className: "trk-link" });
     trkNote.append("Tracker data: ", link("WhoTracks.Me", "https://whotracks.me"), " via ",
       link("AdGuard companiesdb", "https://github.com/AdguardTeam/companiesdb"), " (CC BY-SA 4.0). Blocks apply after a reload.");
   } else {

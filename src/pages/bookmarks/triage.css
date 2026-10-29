@@ -5,23 +5,23 @@
 #view-triage .status-line:empty { display: none; }
 
 #view-triage .triage-item { align-items: flex-start; outline: none; border-left: 3px solid transparent; }
-#view-triage .triage-item:focus { background: #16213e; border-left-color: #e94560; }
+#view-triage .triage-item:focus { background: var(--surface-2); border-left-color: var(--accent); }
 #view-triage .triage-item .fav { margin-top: 2px; }
-#view-triage .triage-item.decided .title a { color: #999; }
+#view-triage .triage-item.decided .title a { color: var(--text-muted); }
 
 #view-triage .triage-target { width: 300px; flex-shrink: 0; min-width: 0; }
 #view-triage .triage-target > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#view-triage .triage-path { color: #c9d3ff; }
+#view-triage .triage-path { color: var(--accent-soft); }
 #view-triage .triage-pending {
   display: inline-flex; align-items: center; max-width: 100%; padding: 2px 8px; border-radius: 10px;
   font-size: 12px; font-weight: 600;
 }
-#view-triage .triage-pending.file { background: #1e3a2f; color: #7ee2a8; }
-#view-triage .triage-pending.remove { background: #3a1e26; color: #ff8a9b; }
+#view-triage .triage-pending.file { background: var(--positive-bg); color: var(--positive); }
+#view-triage .triage-pending.remove { background: var(--negative-bg); color: var(--negative); }
 #view-triage .triage-pending-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 #view-triage .triage-new {
   flex-shrink: 0; margin-left: 6px; padding: 0 5px; border-radius: 4px;
-  background: #e94560; color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
+  background: var(--accent); color: var(--on-accent); font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
 }
 
 #view-triage .triage-actions {
@@ -30,10 +30,10 @@
 }
 #view-triage .triage-actions button.link { padding-top: 6px; white-space: nowrap; }
 #view-triage .triage-folder { width: 170px; padding: 4px 8px; font-size: 12px; }
-#view-triage .triage-hint { color: #ffb86b; font-size: 11px; max-width: 170px; margin-top: 2px; overflow-wrap: anywhere; }
+#view-triage .triage-hint { color: var(--caution); font-size: 11px; max-width: 170px; margin-top: 2px; overflow-wrap: anywhere; }
 #view-triage .triage-hint:empty { display: none; }
 
 #view-triage .triage-zero { padding: 60px 0; }
 #view-triage .triage-zero-icon { font-size: 36px; margin-bottom: 8px; }
-#view-triage .triage-zero-title { color: #e0e0e0; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+#view-triage .triage-zero-title { color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 #view-triage .triage-delete, #view-triage .triage-clear { min-width: 44px; text-align: right; }

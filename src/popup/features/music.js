@@ -29,7 +29,7 @@ listenBtn.addEventListener("click", () => {
 
 async function startListening() {
   if (!ACR_KEY || !ACR_SECRET) {
-    musicResult.innerHTML = `<div class="music-error">ACRCloud credentials not set. <a href="https://www.acrcloud.com/sign-up/" target="_blank" style="color:#6a9fd8;">Sign up free</a> and add them below.</div>`;
+    musicResult.innerHTML = `<div class="music-error">ACRCloud credentials not set. <a href="https://www.acrcloud.com/sign-up/" target="_blank">Sign up free</a> and add them below.</div>`;
     showAcrConfig();
     return;
   }
@@ -147,14 +147,14 @@ function showResult(song) {
   const ytUrl = `https://www.youtube.com/results?search_query=${ytQuery}`;
 
   musicResult.innerHTML = `
-    <a class="song-card" href="${ytUrl}" target="_blank" style="text-decoration:none;color:inherit;cursor:pointer;">
+    <a class="song-card" href="${ytUrl}" target="_blank">
       <div class="art">🎵</div>
       <div class="info">
         <div class="title">${esc(title)}</div>
         <div class="artist">${esc(artist)}</div>
         ${album ? `<div class="album">${esc(album)}</div>` : ""}
       </div>
-      <div style="color:#e94560;font-size:18px;flex-shrink:0;">▶</div>
+      <div class="play-mark">▶</div>
     </a>
   `;
 
@@ -218,12 +218,12 @@ export function loadMusicHistory() {
       musicHistoryEl.innerHTML = "";
       return;
     }
-    musicHistoryEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><h2>Recent</h2><button id="clearHistory" style="background:none;border:none;color:#e94560;font-size:11px;cursor:pointer;">Clear</button></div>` + history.map((h) => {
+    musicHistoryEl.innerHTML = `<div class="music-history-head"><h2>Recent</h2><button id="clearHistory">Clear</button></div>` + history.map((h) => {
       const q = encodeURIComponent(`${h.title} ${h.artist}`);
-      return `<a class="history-item" href="https://www.youtube.com/results?search_query=${q}" target="_blank" style="text-decoration:none;color:inherit;cursor:pointer;">
+      return `<a class="history-item" href="https://www.youtube.com/results?search_query=${q}" target="_blank">
         <span class="h-title">${esc(h.title)}</span>
         <span class="h-artist">${esc(h.artist)}</span>
-        <span style="color:#e94560;font-size:12px;flex-shrink:0;">▶</span>
+        <span class="play-mark">▶</span>
       </a>`;
     }).join("");
     document.getElementById("clearHistory").addEventListener("click", () => {

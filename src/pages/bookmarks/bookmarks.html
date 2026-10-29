@@ -4,24 +4,29 @@
   <meta charset="utf-8">
   <title>🔖 Bookmark Tools</title>
   <link rel="icon" href="/assets/icons/icon16.png">
+  <link rel="stylesheet" href="../../shared/theme.css">
   <style>
     /* Shared look for every view; views add their own styles in <view>.css */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #1a1a2e; color: #e0e0e0; min-height: 100vh; font-size: 13px;
+      font-family: var(--font);
+      background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px;
     }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; }
-    header { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
-    header h1 { font-size: 20px; font-weight: 700; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 24px 60px; }
+    header {
+      display: flex; align-items: center; gap: 20px;
+      padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
     .tabs { display: flex; gap: 4px; flex: 1; }
     .tabs button {
-      background: none; border: none; color: #888; cursor: pointer;
-      font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 6px;
+      background: none; border: 1px solid transparent; color: var(--text-muted); cursor: pointer;
+      font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: var(--radius-sm);
+      transition: color 0.15s, background 0.15s;
     }
-    .tabs button:hover { color: #ccc; background: #16213e; }
-    .tabs button.active { color: #fff; background: #0f3460; }
-    .notice { color: #888; font-size: 12px; margin-bottom: 12px; }
+    .tabs button:hover { color: var(--text); background: var(--surface-2); }
+    .tabs button.active { color: var(--accent); background: var(--accent-bg); border-color: var(--accent-border); font-weight: 600; }
+    .notice { color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
     .notice:empty { display: none; }
     .view { display: none; }
     .view.active { display: block; }
@@ -30,44 +35,53 @@
     .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
     .toolbar .grow { flex: 1; }
     .btn {
-      padding: 7px 14px; background: #16213e; color: #e0e0e0;
-      border: 1px solid #2a2a4a; border-radius: 6px;
+      padding: 7px 14px; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
       font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .btn:hover { background: #1b2a4a; }
-    .btn.primary { background: #e94560; border-color: #e94560; color: #fff; }
-    .btn.primary:hover { background: #c73650; }
+    .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .btn.primary:hover { background: var(--accent-press); border-color: var(--accent-press); }
     .btn:disabled { opacity: 0.5; cursor: default; }
     button.link {
-      background: none; border: none; color: #e94560;
+      background: none; border: none; color: var(--accent);
       font-size: 12px; font-weight: 600; cursor: pointer;
     }
-    button.link:hover { color: #ff6b81; }
+    button.link:hover { color: var(--accent-soft); }
     select, input[type="text"], input[type="search"] {
-      padding: 6px 8px; border: 1px solid #333; border-radius: 6px;
-      background: #0f3460; color: #fff; font-size: 13px;
+      padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--field); color: var(--text); font-size: 13px;
     }
-    select:focus, input:focus { outline: none; border-color: #e94560; }
-    .group { margin-bottom: 22px; }
+    input::placeholder { color: var(--text-faint); }
+    select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .group { margin-bottom: 24px; }
     .group-header {
-      display: flex; align-items: baseline; gap: 14px;
-      padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #2a2a4a;
+      display: flex; align-items: center; gap: 14px;
+      padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--border);
     }
-    .group-header h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
-    .group-header .count { color: #555; font-size: 12px; flex: 1; }
-    .row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; }
-    .row:hover { background: #16213e; }
+    .group-header h2 {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-2);
+    }
+    .group-header h2::before {
+      content: ''; width: 3px; height: 12px; border-radius: 2px;
+      background: var(--accent); flex-shrink: 0;
+    }
+    .group-header .count { color: var(--text-faint); font-size: 12px; flex: 1; font-variant-numeric: tabular-nums; }
+    .row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm); }
+    .row:hover { background: var(--surface-2); }
     .row img.fav { width: 16px; height: 16px; flex-shrink: 0; }
     .row .title { min-width: 0; flex: 1; overflow: hidden; }
     .row .title a {
-      display: block; color: #e0e0e0; text-decoration: none;
+      display: block; color: var(--text); text-decoration: none;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .row .title a:hover { text-decoration: underline; }
-    .row .sub { color: #666; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .muted { color: #666; }
-    .empty { color: #555; text-align: center; padding: 28px; }
-    .status-line { color: #888; font-size: 12px; min-height: 16px; margin-top: 8px; }
+    .row .title a:hover { color: var(--accent-soft); }
+    .row .sub { color: var(--text-dim); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .muted { color: var(--text-dim); }
+    .empty { color: var(--text-faint); text-align: center; padding: 28px; }
+    .status-line { color: var(--text-muted); font-size: 12px; min-height: 16px; margin-top: 8px; }
   </style>
   <link rel="stylesheet" href="triage.css">
   <link rel="stylesheet" href="deadlinks.css">

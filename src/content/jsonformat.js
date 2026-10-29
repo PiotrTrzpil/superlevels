@@ -138,8 +138,8 @@
     style.textContent = `
       body {
         margin: 0; padding: 0;
-        background: #1a1a2e !important;
-        color: #e0e0e0 !important;
+        background: #161616 !important;
+        color: #e8e8e8 !important;
         font-family: 'SF Mono', 'Consolas', 'Monaco', 'Menlo', monospace !important;
         font-size: 13px !important;
         line-height: 1.5 !important;
@@ -150,11 +150,11 @@
         overflow-x: auto;
         tab-size: 2;
       }
-      .sl-jf-key { color: #e94560; }
-      .sl-jf-string { color: #a8d8a8; }
-      .sl-jf-number { color: #6ab0f3; }
-      .sl-jf-bool { color: #f3d86a; }
-      .sl-jf-null { color: #888; font-style: italic; }
+      .sl-jf-key { color: #d4a574; }
+      .sl-jf-string { color: color-mix(in srgb, #4ade80 55%, #bbb); }
+      .sl-jf-number { color: color-mix(in srgb, #60a5fa 45%, #aaa); }
+      .sl-jf-bool { color: color-mix(in srgb, #fbbf24 55%, #bbb); }
+      .sl-jf-null { color: #777; font-style: italic; }
       .sl-jf-toggle {
         cursor: pointer;
         user-select: none;
@@ -183,18 +183,19 @@
       }
       .sl-jf-toolbar button {
         padding: 5px 10px;
-        background: #16213e;
-        color: #aaa;
-        border: 1px solid #2a2a4a;
-        border-radius: 5px;
+        background: #1e1e1e;
+        color: #bbb;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
         font-size: 11px;
         font-family: -apple-system, sans-serif;
         cursor: pointer;
         transition: background 0.15s, color 0.15s;
       }
       .sl-jf-toolbar button:hover {
-        background: #1b2a4a;
-        color: #fff;
+        background: #242424;
+        color: #e8e8e8;
+        border-color: #3a3a3a;
       }
     `;
 
