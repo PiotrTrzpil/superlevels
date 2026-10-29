@@ -25,9 +25,19 @@ body {
   overflow-y: auto;
 }
 .nav::-webkit-scrollbar { width: 4px; }
+/* Same height as the subnav, so their bottom borders line up */
+.nav-brand {
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  height: 48px; padding: 0 12px; margin: -8px -6px 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.01em; color: var(--text);
+}
+.nav-brand img { width: 18px; height: 18px; border-radius: var(--radius-xs); }
 .nav button {
+  position: relative;
+  display: flex; align-items: center; gap: 9px;
   width: 100%;
-  padding: 8px 10px;
+  padding: 7px 8px;
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -38,6 +48,13 @@ body {
   transition: color 0.15s, background 0.15s;
   text-align: left;
 }
+.nav button svg {
+  width: 16px; height: 16px; flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 1.75;
+  stroke-linecap: round; stroke-linejoin: round;
+  opacity: 0.85;
+}
+.nav button svg .fill { fill: currentColor; }
 .nav button:hover { color: var(--text); background: var(--surface-2); }
 .nav button:focus { outline: none; }
 .nav button:focus-visible { box-shadow: 0 0 0 1px var(--accent); }
@@ -45,6 +62,16 @@ body {
   color: var(--accent);
   background: var(--accent-bg);
   font-weight: 600;
+}
+.nav button.active svg { opacity: 1; }
+/* Accent bar on the active item, flush with the nav's left edge */
+.nav button.active::before {
+  content: ""; position: absolute; left: -6px; top: 7px; bottom: 7px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
+}
+.nav-version {
+  margin-top: auto; padding: 8px 8px 2px;
+  font-size: 10px; color: var(--text-faint);
 }
 
 /* ── Sub nav: the pages of the active group ── */

@@ -25,6 +25,8 @@ import { loadXUnhook } from "./features/xunhook.js";
 import { activeTab } from "./lib/tabs.js";
 
 // ── Navigation ──
+document.getElementById("navVersion").textContent = `v${chrome.runtime.getManifest().version}`;
+
 function switchToPage(page) {
   const btn = document.querySelector(`.subnav button[data-page="${page}"]`);
   if (!btn) return;
