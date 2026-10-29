@@ -33,11 +33,17 @@ const LISTS = [
 // Fanboy's lists, from the EasyList authors (CC BY 3.0)
 const FANBOY = "https://secure.fanboy.co.nz/";
 const EXTRAS = [
-  { id: "cookies", title: "Cookie notices", url: FANBOY + "fanboy-cookiemonster.txt" },
-  { id: "social", title: "Social widgets", url: FANBOY + "fanboy-social.txt" },
-  { id: "newsletters", title: "Newsletter pop-ups", url: FANBOY + "fanboy-newsletter.txt" },
-  { id: "notifications", title: "Notification prompts", url: FANBOY + "fanboy-notifications.txt" },
+  // Shown in the popup's Cookie banners section, not with the other extras
+  { id: "cookies", title: "Block consent scripts", url: FANBOY + "fanboy-cookiemonster.txt",
+    description: "Stops consent banners from loading at all, so there's nothing to click and no consent is given. Uses Ad Block, so it only works while Ad Block is on." },
+  { id: "social", title: "Social widgets", url: FANBOY + "fanboy-social.txt",
+    description: "Removes like, share and follow buttons, comment plugins and embedded social feeds, along with the tracking they bring. Embedded posts may disappear too." },
+  { id: "newsletters", title: "Newsletter pop-ups", url: FANBOY + "fanboy-newsletter.txt",
+    description: "Hides \"subscribe to our newsletter\" pop-ups, slide-ins and email sign-up boxes." },
+  { id: "notifications", title: "Notification prompts", url: FANBOY + "fanboy-notifications.txt",
+    description: "Blocks \"allow notifications\" prompts and the push-notification services that show them." },
   { id: "annoyances", title: "Other annoyances", url: FANBOY + "fanboy-annoyance.txt",
+    description: "Chat widgets, \"open in app\" banners, feedback tabs, sticky bars and similar clutter. The broadest list, so the likeliest to hide something you wanted.",
     without: ["cookies", "social", "newsletters", "notifications"] },
 ];
 const DOMAINS_PER_RULE = 1000;
@@ -337,14 +343,14 @@ if (!args.length) {
     return [id, new Set(filterLines(await res.text()))];
   }));
   const linesById = Object.fromEntries(texts);
-  for (const { id, title, without = [] } of EXTRAS) {
+  for (const { id, title, description, without = [] } of EXTRAS) {
     // e.g. the Annoyance list already contains the cookie/social/… lists
     const lines = [...linesById[id]].filter((l) => !without.some((w) => linesById[w].has(l)));
     const list = compileList(id, lines, { minRules: 0, minSelectors: MIN_EXTRA_SELECTORS });
     files[`extra-${id}.rules.json`] = list.files.rules;
     files[`extra-${id}.css`] = list.files.css;
     files[`extra-${id}.cosmetic.json`] = list.files.cosmetic;
-    extras.push({ id, title, rules: list.rules.length, selectors: list.selectors });
+    extras.push({ id, title, description, rules: list.rules.length, selectors: list.selectors });
   }
 }
 

@@ -10,6 +10,9 @@ const adblockHostEl = document.getElementById("adblockHost");
 const adblockPause = document.getElementById("adblockPause");
 const adblockBuild = document.getElementById("adblockBuild");
 const adblockExtras = document.getElementById("adblockExtras");
+// The consent-banner list sits with Cookie banners rather than the other extras
+const COOKIE_LIST = "cookies";
+const nocookieList = document.getElementById("nocookieList");
 
 let adblockHost = "";
 
@@ -37,6 +40,7 @@ export async function loadAdblock() {
     ? `Lists built ${new Date(meta.builtAt).toLocaleDateString()}: ${meta.rules.toLocaleString()} rules.`
     : "Not set up. Ad Block is optional: build the filter lists with pnpm build:adblock in the extension folder, then reload the extension.";
   renderAdblockExtras(meta?.extras || [], data.adblock_extras || []);
+  updateCookieListState();
   if (meta) showStatus(adblockStatus, enabled);
   else {
     adblockStatus.textContent = "NOT BUILT";
@@ -47,40 +51,64 @@ export async function loadAdblock() {
 // One switch per extra list the build produced (meta.extras); all off by default
 function renderAdblockExtras(extras, enabledIds) {
   adblockExtras.replaceChildren();
-  if (!extras.length) return;
+  nocookieList.replaceChildren();
+  const cookieList = extras.find((e) => e.id === COOKIE_LIST);
+  if (cookieList) nocookieList.append(extraRow(cookieList, enabledIds));
+  const rest = extras.filter((e) => e !== cookieList);
+  if (!rest.length) return;
   const heading = document.createElement("h2");
   heading.textContent = "Extra lists";
   heading.style.marginTop = "12px";
-  adblockExtras.append(heading);
-  for (const extra of extras) {
-    const row = document.createElement("div");
-    row.className = "toggle-row";
-    const label = document.createElement("label");
-    label.textContent = extra.title;
-    label.title = `${extra.rules.toLocaleString()} rules, ${extra.selectors.toLocaleString()} hiding selectors`;
-    const sw = document.createElement("label");
-    sw.className = "switch";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.dataset.extra = extra.id;
-    input.checked = enabledIds.includes(extra.id);
-    input.addEventListener("change", async () => {
-      const { adblock_extras = [] } = await chrome.storage.local.get(["adblock_extras"]);
-      const rest = adblock_extras.filter((id) => id !== extra.id);
-      await chrome.storage.local.set({ adblock_extras: input.checked ? [...rest, extra.id] : rest });
-    });
-    const slider = document.createElement("span");
-    slider.className = "slider";
-    sw.append(input, slider);
-    row.append(label, sw);
-    adblockExtras.append(row);
+  adblockExtras.append(heading, ...rest.map((e) => extraRow(e, enabledIds)));
+}
+
+// The cookie list's rules only load with Ad Block on; say so where it's shown
+function updateCookieListState() {
+  const input = nocookieList.querySelector("input");
+  if (!input) return;
+  input.disabled = !adblockToggle.checked;
+  input.parentElement.title = input.disabled ? "Turn on Ad Block to use this" : "";
+}
+
+function extraRow(extra, enabledIds) {
+  const row = document.createElement("div");
+  row.className = "toggle-row";
+  row.title = `${extra.rules.toLocaleString()} rules, ${extra.selectors.toLocaleString()} hiding selectors`;
+  const text = document.createElement("div");
+  text.className = "toggle-text";
+  const label = document.createElement("label");
+  label.textContent = extra.title;
+  text.append(label);
+  // Lists built before descriptions existed have none
+  if (extra.description) {
+    const desc = document.createElement("div");
+    desc.className = "opt-desc";
+    desc.textContent = extra.description;
+    text.append(desc);
   }
+  const sw = document.createElement("label");
+  sw.className = "switch";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.dataset.extra = extra.id;
+  input.checked = enabledIds.includes(extra.id);
+  input.addEventListener("change", async () => {
+    const { adblock_extras = [] } = await chrome.storage.local.get(["adblock_extras"]);
+    const rest = adblock_extras.filter((id) => id !== extra.id);
+    await chrome.storage.local.set({ adblock_extras: input.checked ? [...rest, extra.id] : rest });
+  });
+  const slider = document.createElement("span");
+  slider.className = "slider";
+  sw.append(input, slider);
+  row.append(text, sw);
+  return row;
 }
 
 adblockToggle.addEventListener("change", () => {
   const enabled = adblockToggle.checked;
   showStatus(adblockStatus, enabled);
   chrome.storage.local.set({ adblock_enabled: enabled });
+  updateCookieListState();
 });
 
 adblockPause.addEventListener("change", async () => {

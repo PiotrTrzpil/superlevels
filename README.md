@@ -123,12 +123,14 @@ Shazam-like song identification for whatever plays in the current tab. It record
 #### 🛡 Ad Block
 Blocks ad and tracker requests and hides the empty ad slots they leave behind, like [uBlock Origin Lite](https://github.com/uBlockOrigin/uBOL-home). [EasyList](https://easylist.to) and EasyPrivacy are compiled into Chrome's built-in `declarativeNetRequest` rules (about 13,000 rules covering roughly 90,000 domains), so Chrome does the blocking itself and no page traffic passes through the extension. The icon badge shows how many requests were blocked on the current page. Pause it per site if something breaks. Not included: YouTube video ads, popup blocking, and scriptlet/procedural filters.
 
-**Extra lists**, each off until you switch it on: cookie notices, social widgets (like/share buttons, embedded feeds), newsletter pop-ups, notification prompts, and other annoyances (chat widgets, "open in app" banners). These are [Fanboy's lists](https://easylist.to) from the EasyList authors. With every list on, it comes to about 17,000 rules, inside Chrome's 30,000-rule budget for dynamic rules.
+**Extra lists**, each off until you switch it on: social widgets (like/share buttons, embedded feeds), newsletter pop-ups, notification prompts, and other annoyances (chat widgets, "open in app" banners), plus a consent-banner list that's switched on under [Cookie banners](#-cookie-banners). These are [Fanboy's lists](https://easylist.to) from the EasyList authors. With every list on, it comes to about 17,000 rules, inside Chrome's 30,000-rule budget for dynamic rules.
 
 Needs the one-time build in [Install](#install). Until then the popup shows "NOT BUILT" and everything else works normally.
 
 #### 🚫 Cookie banners
 Hides and auto-dismisses cookie consent pop-ups. Covers OneTrust, Cookiebot, Didomi, Usercentrics, iubenda, Osano and many more consent frameworks. Turn it off if a site breaks.
+
+**Block consent scripts** (off by default) goes further: Fanboy's Cookie Monster list stops consent banners from loading at all, so nothing is clicked and no consent is given. It's an Ad Block list, so it needs Ad Block on and built.
 
 #### 🗄 No Paywall
 Opens paywalled news articles straight on [archive.is](https://archive.is): an nytimes.com article goes to `archive.is/https://www.nytimes.com/...`. Only article URLs redirect (homepages and section fronts don't), tracking parameters are dropped so existing snapshots match, and links clicked from an archive page open the original. The site list (NYT, WSJ, FT, Bloomberg, The Economist, plus Dutch, Belgian, German, French, Italian, Spanish and Nordic papers like NRC, De Standaard, Spiegel, Le Monde, Corriere, El País) is editable in the popup.
