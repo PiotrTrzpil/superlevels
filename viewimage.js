@@ -133,20 +133,25 @@
     return null;
   }
 
+  // Images results only (old tbm=isch and new udm=2 URLs) — not regular search
+  function isImageSearch() {
+    const params = new URLSearchParams(location.search);
+    return params.get("tbm") === "isch" || params.get("udm") === "2";
+  }
+
   function inject() {
-    // Remove old buttons
-    document.querySelectorAll(`.${BUTTON_CLASS}`).forEach((el) => el.remove());
-
-    const imageUrl = getFullImageUrl();
-    if (!imageUrl) return;
+    const imageUrl = isImageSearch() ? getFullImageUrl() : null;
     // Only allow http/https URLs to prevent javascript: injection
-    if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) return;
+    const valid = imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"));
+    const container = valid ? findImageContainer() : null;
 
-    const container = findImageContainer();
+    // Leave an up-to-date button alone: replacing it is itself a DOM mutation,
+    // which would re-trigger the observer and churn forever
+    const existing = document.querySelectorAll(`.${BUTTON_CLASS}`);
+    if (container && existing.length === 1 && existing[0].parentElement === container &&
+        existing[0].getAttribute("href") === imageUrl) return;
+    existing.forEach((el) => el.remove());
     if (!container) return;
-
-    // Don't add duplicate
-    if (container.querySelector(`.${BUTTON_CLASS}`)) return;
 
     const btn = document.createElement("a");
     btn.className = BUTTON_CLASS;

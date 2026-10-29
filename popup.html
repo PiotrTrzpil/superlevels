@@ -101,6 +101,12 @@
       font-size: 13px; text-align: center;
     }
     .timeout-row input:focus { outline: none; border-color: #e94560; }
+    .timeout-row select {
+      padding: 4px 6px;
+      border: 1px solid #333; border-radius: 6px;
+      background: #0f3460; color: #fff; font-size: 13px;
+    }
+    .timeout-row select:focus { outline: none; border-color: #e94560; }
     .add-row {
       display: flex; gap: 6px; margin-bottom: 10px;
     }
@@ -128,38 +134,14 @@
       font-size: 16px; cursor: pointer; padding: 0 4px; line-height: 1;
     }
     .exc-list .item button:hover { color: #ff6b81; }
-    .closed-section { margin-top: 14px; }
-    .closed-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 6px;
+    .open-closed {
+      width: 100%; margin-top: 14px; padding: 9px 12px;
+      background: #16213e; color: #e0e0e0;
+      border: 1px solid #2a2a4a; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-align: left; transition: background 0.15s;
     }
-    .closed-header button {
-      background: none; border: none; color: #e94560;
-      font-size: 11px; cursor: pointer;
-    }
-    .closed-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 10px; background: #16213e;
-      border-radius: 6px; margin-bottom: 4px;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .closed-item:hover { background: #1b2a4a; }
-    .closed-item .favicon {
-      width: 16px; height: 16px; border-radius: 2px;
-      flex-shrink: 0; background: #0f3460;
-    }
-    .closed-item .closed-title {
-      flex: 1; font-size: 12px; min-width: 0;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .closed-item .closed-time {
-      font-size: 10px; color: #555; flex-shrink: 0;
-    }
-    .closed-item .reopen {
-      background: none; border: none; color: #e94560;
-      font-size: 13px; cursor: pointer; flex-shrink: 0;
-      padding: 0 2px;
-    }
+    .open-closed:hover { background: #1b2a4a; }
     .empty {
       color: #555; font-size: 12px; text-align: center; padding: 12px;
     }
@@ -763,7 +745,9 @@
     <button data-page="xreply">𝕏 Reply</button>
     <button data-page="photopea">🫛 Photopea</button>
     <button data-page="archive">🗄 No paywall</button>
+    <button data-page="bookmarks">🔖 Bookmarks</button>
     <button data-page="jstoggle">⚡ JS</button>
+    <button data-page="adblock">🛡 Ads</button>
     <button data-page="nocookie">🚫 Cookies=OK</button>
     <button data-page="livecss">🎨 CSS</button>
     <button data-page="unhook">📺 YT Unhook</button>
@@ -785,8 +769,13 @@
       </div>
       <div class="timeout-row">
         <label>Close after</label>
-        <input type="number" id="timeout" min="1" max="1440" value="5">
-        <span>minutes of inactivity</span>
+        <input type="number" id="timeout" min="1" value="3">
+        <select id="timeoutUnit">
+          <option value="1">minutes</option>
+          <option value="60">hours</option>
+          <option value="1440" selected>days</option>
+        </select>
+        <span>of inactivity</span>
       </div>
       <h2>Excluded Hosts</h2>
       <div class="add-row">
@@ -794,7 +783,7 @@
         <button id="addBtn">Add</button>
       </div>
       <div class="exc-list" id="list"></div>
-      <div class="closed-section" id="closedSection"></div>
+      <button class="open-closed" id="openClosed">📋 Closed tabs list</button>
     </div>
   </div>
 
@@ -973,6 +962,36 @@
     </div>
   </div>
 
+  <!-- ═══ Bookmarks Page ═══ -->
+  <div class="page" id="page-bookmarks">
+    <div class="page-body">
+      <button class="open-closed" style="margin-top:0" data-bookmark-view="triage">📥 Inbox: file new bookmarks</button>
+      <button class="open-closed" style="margin-top:6px" data-bookmark-view="deadlinks">🪦 Dead links</button>
+      <button class="open-closed" style="margin-top:6px" data-bookmark-view="tidy">🧹 Tidy: duplicates, tracking, empty folders</button>
+
+      <h2 style="margin-top:16px">Local programs (bridge)</h2>
+      <div class="unhook-big-toggle">
+        <div class="yticon">🔌</div>
+        <label class="big-switch">
+          <input type="checkbox" id="bookmarksToggle">
+          <span class="big-slider"></span>
+        </label>
+        <div class="status off" id="bookmarksStatus">OFF</div>
+      </div>
+
+      <div class="unhook-features">
+        <div class="unhook-feature"><span class="check">✓</span> Programs on this computer edit bookmarks through Chrome, so Sync keeps the changes</div>
+        <div class="unhook-feature"><span class="check">✓</span> Talks only to a native messaging host you installed</div>
+      </div>
+
+      <div class="xdim-note" id="bookmarksConn" style="margin-top:10px"></div>
+
+      <h2>Recent changes</h2>
+      <div class="exc-list" id="bookmarksBatches"></div>
+      <div class="xdim-note" id="bookmarksNote"></div>
+    </div>
+  </div>
+
   <!-- ═══ Photopea No Ads Page ═══ -->
   <div class="page" id="page-photopea">
     <div class="page-body">
@@ -1021,6 +1040,41 @@
         Tightens default reply audience on new tweets.<br>
         Toggle off to leave the picker untouched.
       </div>
+    </div>
+  </div>
+
+  <!-- ═══ Ad Block Page ═══ -->
+  <div class="page" id="page-adblock">
+    <div class="page-body">
+      <div class="unhook-big-toggle">
+        <div class="yticon">🛡</div>
+        <label class="big-switch">
+          <input type="checkbox" id="adblockToggle" checked>
+          <span class="big-slider"></span>
+        </label>
+        <div class="status on" id="adblockStatus">ON</div>
+      </div>
+      <div class="dark-host" id="adblockHost"></div>
+
+      <div class="toggle-row">
+        <label>Pause on this site</label>
+        <label class="switch">
+          <input type="checkbox" id="adblockPause">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="unhook-features">
+        <div class="unhook-feature"><span class="check">✓</span> Blocks ad and tracker requests (EasyList + EasyPrivacy)</div>
+        <div class="unhook-feature"><span class="check">✓</span> Hides the empty ad slots left behind</div>
+        <div class="unhook-feature"><span class="check">✓</span> Blocked count shown on the extension icon</div>
+      </div>
+
+      <div class="xdim-note">
+        Chrome does the blocking itself — no page traffic passes through the extension.<br>
+        Pause a site if it breaks. Reload open tabs after switching off.
+      </div>
+      <div class="xdim-note" id="adblockBuild" style="margin-top:10px"></div>
     </div>
   </div>
 

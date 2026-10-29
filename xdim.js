@@ -519,8 +519,10 @@ chrome.storage.onChanged.addListener((changes) => {
     if (changes.xdim_theme) _theme = changes.xdim_theme.newValue ?? "dim";
     if (changes.xdim_customHue) _customHue = changes.xdim_customHue.newValue ?? 210;
     ensureBaseCSS();
-    syncThemeColor();
-    if (document.documentElement.classList.contains(DIM_CLASS)) scanShadowRoots();
+    if (document.documentElement.classList.contains(DIM_CLASS)) {
+      syncThemeColor();
+      scanShadowRoots();
+    }
   }
 });
 

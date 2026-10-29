@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Closed pocket knife drawn horizontally, then tilted -->
+  <g id="knife" transform="translate(64 72) rotate(-22) translate(-52 -20)">
+
+    <!-- Tools peeking out of the top, pivoting at each end, behind the body -->
+    <g id="tools">
+      <!-- Main blade, pivots at right end, opened toward the left -->
+      <g transform="rotate(24 88 20)">
+        <path d="M88 10H26q-14 0-22 6q10 12 30 12h54z" fill="#aab5c1"/>
+      </g>
+      <!-- Bottle opener / screwdriver, pivots at left end, opened toward the right -->
+      <g transform="rotate(-26 16 20)">
+        <path d="M16 13h62l6 3v8h-8l-4-4h-6l4 5H16z" fill="#8f9cab"/>
+      </g>
+    </g>
+
+    <!-- Silver body (tool stack) showing above the red scale -->
+    <rect id="liner" x="1" y="-5" width="102" height="40" rx="15" fill="#c2cad3"/>
+
+    <!-- Red scale with darker lower lip -->
+    <g id="scale">
+      <rect x="0" y="0" width="104" height="40" rx="15" fill="#a9161d"/>
+      <rect x="0" y="0" width="104" height="35" rx="14" fill="#dc2a31"/>
+    </g>
+
+    <!-- Pivot rivets -->
+    <g id="rivets" fill="#e6eaee">
+      <circle cx="16" cy="18" r="4"/>
+      <circle cx="88" cy="18" r="4"/>
+    </g>
+
+    <!-- Lightning bolt emblem -->
+    <path id="bolt" d="M58 3L40 21h11l-5 13 19-19H54z" fill="#fff"/>
+  </g>
+</svg>

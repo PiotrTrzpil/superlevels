@@ -125,17 +125,18 @@
       const brightness = data.darkmode_brightness || 100;
       if (!enabled) return;
 
-      // Skip immediately if we've previously detected this site as natively dark
-      if (data[pageDarkKey]) return;
-
-      applyDarkMode(true, brightness);
+      // A site seen as natively dark before: don't invert early (avoids a
+      // flash on dark pages), but still check this page — one dark page
+      // mustn't turn dark mode off for the whole site forever
+      const cachedDark = !!data[pageDarkKey];
+      if (!cachedDark) applyDarkMode(true, brightness);
 
       // Re-verify once body styles are computed
       const recheck = () => {
-        if (pageBgIsDark()) {
-          applyDarkMode(false, 0);
-          chrome.storage.local.set({ [pageDarkKey]: true });
-        }
+        const isDark = pageBgIsDark();
+        if (isDark && !cachedDark) chrome.storage.local.set({ [pageDarkKey]: true });
+        else if (!isDark && cachedDark) chrome.storage.local.remove(pageDarkKey);
+        applyDarkMode(!isDark, brightness);
       };
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", recheck, { once: true });

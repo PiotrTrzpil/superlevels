@@ -4,6 +4,8 @@
 // ═══════════════════════════════════
 (() => {
   const STYLE_ID = "sl-jsonformat";
+  // Original page text, captured on first format so the toggle can restore it
+  let originalRaw = null;
 
   function isJsonPage() {
     // Primary signal: content type
@@ -99,16 +101,28 @@
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  function applyJsonFormat() {
-    // Get raw JSON text
-    let raw = "";
+  function readRawText() {
     if (document.body.children.length === 1 && document.body.children[0].tagName === "PRE") {
-      raw = document.body.children[0].textContent;
+      return document.body.children[0].textContent;
     } else if (document.body.querySelector("pre")) {
-      raw = document.body.querySelector("pre").textContent;
-    } else {
-      raw = document.body.textContent;
+      return document.body.querySelector("pre").textContent;
     }
+    return document.body.textContent;
+  }
+
+  function showRaw() {
+    const el = document.getElementById(STYLE_ID);
+    if (el) el.remove();
+    document.body.innerHTML = "";
+    const pre = document.createElement("pre");
+    pre.textContent = originalRaw.trim();
+    document.body.appendChild(pre);
+  }
+
+  function applyJsonFormat() {
+    if (document.getElementById(STYLE_ID)) return; // already formatted
+    // Get raw JSON text (once — after formatting, the body holds our markup)
+    const raw = originalRaw ?? readRawText();
 
     let parsed;
     try {
@@ -116,6 +130,7 @@
     } catch {
       return; // Can't parse — bail
     }
+    originalRaw = raw;
 
     // Inject styles
     const style = document.createElement("style");
@@ -202,14 +217,7 @@
 
     const rawBtn = document.createElement("button");
     rawBtn.textContent = "Raw";
-    rawBtn.addEventListener("click", () => {
-      const el = document.getElementById(STYLE_ID);
-      if (el) el.remove();
-      document.body.innerHTML = "";
-      const pre = document.createElement("pre");
-      pre.textContent = raw.trim();
-      document.body.appendChild(pre);
-    });
+    rawBtn.addEventListener("click", showRaw);
 
     const collapseBtn = document.createElement("button");
     collapseBtn.textContent = "Collapse All";
@@ -237,9 +245,12 @@
     wrap.innerHTML = buildCollapsible(parsed, 0);
     document.body.appendChild(wrap);
 
-    // Toggle click handler (event delegation)
+    // Toggle click handler (event delegation); the "..." of a collapsed block expands it too
     wrap.addEventListener("click", (e) => {
-      const toggle = e.target.closest(".sl-jf-toggle");
+      const clickedEllipsis = e.target.closest(".sl-jf-ellipsis");
+      const toggle = clickedEllipsis
+        ? clickedEllipsis.previousElementSibling.previousElementSibling
+        : e.target.closest(".sl-jf-toggle");
       if (!toggle) return;
       const collapsed = toggle.dataset.collapsed === "true";
       toggle.dataset.collapsed = collapsed ? "false" : "true";
@@ -251,8 +262,7 @@
   }
 
   function removeFormat() {
-    const el = document.getElementById(STYLE_ID);
-    if (el) el.remove();
+    if (document.getElementById(STYLE_ID)) showRaw();
   }
 
   // Check storage and apply

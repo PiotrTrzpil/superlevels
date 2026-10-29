@@ -1,0 +1,13 @@
+{
+  "name": "superlevels",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:adblock": "node adblock/build.mjs",
+    "test:setup": "playwright-core install chromium",
+    "test": "node --test tests/"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.0-alpha-1790635538000"
+  }
+}

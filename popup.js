@@ -15,6 +15,7 @@ function switchToPage(page) {
     else if (page === "darkmode") loadDarkMode();
     else if (page === "xdim") loadXDim();
     else if (page === "jstoggle") loadJsToggle();
+    else if (page === "adblock") loadAdblock();
     else if (page === "nocookie") loadNoCookie();
     else if (page === "livecss") loadLiveCSS();
     else if (page === "unhook") loadUnhook();
@@ -22,6 +23,7 @@ function switchToPage(page) {
     else if (page === "xreply") loadXReply();
     else if (page === "photopea") loadPhotopea();
     else if (page === "archive") loadArchive();
+    else if (page === "bookmarks") loadBookmarkBridge();
     else if (page === "jsonformat") loadJsonFormat();
     else if (page === "summarize") loadSummarize();
     else if (page === "music") { loadMusicHistory(); loadAcrFields(); }
@@ -52,13 +54,23 @@ requestAnimationFrame(() => {
 // ═══════════════════════════════════
 const enabledEl = document.getElementById("enabled");
 const timeoutEl = document.getElementById("timeout");
+const timeoutUnitEl = document.getElementById("timeoutUnit");
+const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // keep in sync with background.js
+const MAX_TIMEOUT_MIN = 365 * 24 * 60;
+
+// Show the timeout in the largest unit that divides it evenly
+function renderTimeout(minutes) {
+  const unit = [1440, 60, 1].find((u) => minutes % u === 0);
+  timeoutUnitEl.value = unit;
+  timeoutEl.value = minutes / unit;
+}
 const hostInput = document.getElementById("hostInput");
 const addBtn = document.getElementById("addBtn");
 const listEl = document.getElementById("list");
 
 chrome.storage.local.get(["enabled", "timeoutMin", "exclusions"], (data) => {
   enabledEl.checked = data.enabled !== false;
-  timeoutEl.value = data.timeoutMin || 5;
+  renderTimeout(data.timeoutMin || DEFAULT_TIMEOUT_MIN);
   renderExclusionList(data.exclusions || []);
 });
 
@@ -66,11 +78,16 @@ enabledEl.addEventListener("change", () => {
   chrome.storage.local.set({ enabled: enabledEl.checked });
 });
 
-timeoutEl.addEventListener("change", () => {
-  const val = Math.max(1, Math.min(1440, parseInt(timeoutEl.value) || 5));
-  timeoutEl.value = val;
-  chrome.storage.local.set({ timeoutMin: val });
-});
+function saveTimeout() {
+  const unit = parseInt(timeoutUnitEl.value);
+  const amount = Math.max(1, parseInt(timeoutEl.value) || 1);
+  const minutes = Math.min(MAX_TIMEOUT_MIN, amount * unit);
+  renderTimeout(minutes);
+  chrome.storage.local.set({ timeoutMin: minutes });
+}
+
+timeoutEl.addEventListener("change", saveTimeout);
+timeoutUnitEl.addEventListener("change", saveTimeout);
 
 function addHost() {
   let host = hostInput.value.trim().toLowerCase();
@@ -110,54 +127,18 @@ function renderExclusionList(exclusions) {
   });
 }
 
-// ── Closed Tabs History ──
-const closedSection = document.getElementById("closedSection");
+// ── Closed Tabs list ──
+const openClosedBtn = document.getElementById("openClosed");
 
-function loadClosedTabs() {
-  chrome.storage.local.get(["closed_tabs"], (data) => {
-    const closed = data.closed_tabs || [];
-    if (!closed.length) {
-      closedSection.innerHTML = "";
-      return;
-    }
-    closedSection.innerHTML = `
-      <div class="closed-header">
-        <h2>Recently Closed</h2>
-        <button id="clearClosed">Clear</button>
-      </div>
-    ` + closed.map((t, i) => `
-      <div class="closed-item" data-url="${escA(t.url)}" data-idx="${i}">
-        ${t.favIconUrl ? `<img class="favicon" src="${escA(t.favIconUrl)}" onerror="this.style.display='none'">` : '<div class="favicon"></div>'}
-        <span class="closed-title" title="${escA(t.url)}">${esc(t.title)}</span>
-        <span class="closed-time">${timeAgo(t.time)}</span>
-        <button class="reopen" title="Re-open">↗</button>
-      </div>
-    `).join("");
+chrome.storage.local.get(["closed_tabs"], (data) => {
+  const count = (data.closed_tabs || []).length;
+  if (count) openClosedBtn.textContent += ` (${count})`;
+});
 
-    document.getElementById("clearClosed").addEventListener("click", () => {
-      chrome.storage.local.remove("closed_tabs", loadClosedTabs);
-    });
-
-    closedSection.querySelectorAll(".closed-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        chrome.tabs.create({ url: item.dataset.url });
-      });
-    });
-  });
-}
-
-function timeAgo(ts) {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return mins + "m ago";
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return hrs + "h ago";
-  return Math.floor(hrs / 24) + "d ago";
-}
-
-// Defer closed-tab history (up to 50 favicon img loads) until after first paint
-requestAnimationFrame(loadClosedTabs);
+openClosedBtn.addEventListener("click", async () => {
+  await chrome.runtime.sendMessage({ type: "closedOpenPage" });
+  window.close();
+});
 
 // ═══════════════════════════════════
 //  Cookie Editor
@@ -288,11 +269,7 @@ async function saveCookie(idx) {
   const pathEl = item.querySelector('[data-field="path"]');
   const sameSiteEl = item.querySelector('[data-field="sameSite"]');
 
-  // Remove old cookie first
   const protocol = original.secure ? "https" : "http";
-  const oldUrl = `${protocol}://${original.domain.replace(/^\./, "")}${original.path}`;
-  await chrome.cookies.remove({ url: oldUrl, name: original.name });
-
   const domain = domainEl ? domainEl.value : original.domain;
   const path = pathEl ? pathEl.value : original.path;
   const newUrl = `${protocol}://${domain.replace(/^\./, "")}${path}`;
@@ -309,8 +286,20 @@ async function saveCookie(idx) {
   if (!original.hostOnly) details.domain = domain;
   if (original.expirationDate) details.expirationDate = original.expirationDate;
 
-  await chrome.cookies.set(details);
-  loadCookies();
+  // Write the new cookie before touching the old one, so an invalid edit
+  // (e.g. a bad SameSite value) doesn't delete the cookie outright
+  const saved = await chrome.cookies.set(details).catch((err) => {
+    alert(`Could not save cookie: ${err.message}`);
+    return null;
+  });
+  if (!saved) return;
+
+  // Renamed or moved: the old cookie is a separate one, remove it
+  if (saved.name !== original.name || saved.domain !== original.domain || saved.path !== original.path) {
+    await deleteCookie(original);
+  } else {
+    loadCookies();
+  }
 }
 
 // Delete All
@@ -577,8 +566,8 @@ let xdimCustomHue = 210;
 async function loadXDim() {
   const data = await chrome.storage.local.get(["xdim_enabled", "xdim_theme", "xdim_customHue"]);
   const enabled = data.xdim_enabled || false;
-  xdimTheme = data.xdim_theme || "dim";
-  xdimCustomHue = data.xdim_customHue || 210;
+  xdimTheme = data.xdim_theme ?? "dim";
+  xdimCustomHue = data.xdim_customHue ?? 210;
 
   xdimToggle.checked = enabled;
   xdimHueSlider.value = xdimCustomHue;
@@ -646,6 +635,70 @@ xdimHueSlider.addEventListener("input", () => {
 xdimHueSlider.addEventListener("change", async () => {
   xdimCustomHue = parseInt(xdimHueSlider.value);
   await chrome.storage.local.set({ xdim_customHue: xdimCustomHue });
+});
+
+// ═══════════════════════════════════
+//  Ad Block
+// ═══════════════════════════════════
+const adblockToggle = document.getElementById("adblockToggle");
+const adblockStatus = document.getElementById("adblockStatus");
+const adblockHostEl = document.getElementById("adblockHost");
+const adblockPause = document.getElementById("adblockPause");
+const adblockBuild = document.getElementById("adblockBuild");
+
+let adblockHost = "";
+
+async function loadAdblock() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  adblockHost = "";
+  try {
+    const url = new URL(tab?.url);
+    if (/^https?:$/.test(url.protocol)) adblockHost = url.hostname.replace(/^www\./, "");
+  } catch {}
+  adblockHostEl.textContent = adblockHost ? `Current site: ${adblockHost}` : "";
+
+  const [data, meta] = await Promise.all([
+    chrome.storage.local.get(["adblock_enabled", "adblock_paused"]),
+    // Written by adblock/build.mjs; missing until the lists are built
+    fetch("adblock/meta.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  ]);
+  const enabled = data.adblock_enabled !== false;
+  const paused = data.adblock_paused || [];
+  adblockToggle.checked = enabled && !!meta;
+  adblockToggle.disabled = !meta;
+  adblockPause.checked = paused.some((h) => adblockHost === h || adblockHost.endsWith("." + h));
+  adblockPause.disabled = !adblockHost || !meta;
+  adblockBuild.textContent = meta
+    ? `Lists built ${new Date(meta.builtAt).toLocaleDateString()}: ${meta.rules.toLocaleString()} rules.`
+    : "Not set up. Ad Block is optional: build the filter lists with pnpm build:adblock in the extension folder, then reload the extension.";
+  if (meta) updateAdblockUI(enabled);
+  else {
+    adblockStatus.textContent = "NOT BUILT";
+    adblockStatus.className = "status off";
+  }
+}
+
+function updateAdblockUI(on) {
+  adblockStatus.textContent = on ? "ON" : "OFF";
+  adblockStatus.className = "status " + (on ? "on" : "off");
+}
+
+adblockToggle.addEventListener("change", () => {
+  const enabled = adblockToggle.checked;
+  updateAdblockUI(enabled);
+  chrome.storage.local.set({ adblock_enabled: enabled });
+});
+
+adblockPause.addEventListener("change", async () => {
+  if (!adblockHost) return;
+  const { adblock_paused = [] } = await chrome.storage.local.get(["adblock_paused"]);
+  // Unpausing also clears any parent-domain entry that covered this host
+  const rest = adblock_paused.filter((h) => !(adblockHost === h || adblockHost.endsWith("." + h)));
+  await chrome.storage.local.set({ adblock_paused: adblockPause.checked ? [...rest, adblockHost] : rest });
+  // Wait until the background has swapped the rules, then reload to apply
+  await chrome.runtime.sendMessage({ type: "adblockSync" });
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab) chrome.tabs.reload(tab.id);
 });
 
 // ═══════════════════════════════════
@@ -914,6 +967,82 @@ archiveSites.addEventListener("input", () => {
 });
 
 // ═══════════════════════════════════
+//  Bookmark Bridge
+// ═══════════════════════════════════
+const bookmarksToggle = document.getElementById("bookmarksToggle");
+const bookmarksStatus = document.getElementById("bookmarksStatus");
+const bookmarksConn = document.getElementById("bookmarksConn");
+const bookmarksBatches = document.getElementById("bookmarksBatches");
+const bookmarksNote = document.getElementById("bookmarksNote");
+const BOOKMARK_OP_LABELS = { create: "added", move: "moved", update: "renamed", remove: "removed" };
+
+async function loadBookmarkBridge() {
+  const data = await chrome.storage.local.get(["bookmarks_bridge_enabled", "bookmarks_batches"]);
+  const enabled = !!data.bookmarks_bridge_enabled;
+  bookmarksToggle.checked = enabled;
+  bookmarksStatus.textContent = enabled ? "ON" : "OFF";
+  bookmarksStatus.className = "status " + (enabled ? "on" : "off");
+  renderBookmarkBatches(data.bookmarks_batches || []);
+  if (!enabled) {
+    bookmarksConn.textContent = "Off: no host runs, and no program on this computer can change your bookmarks.";
+    return;
+  }
+  const status = await chrome.runtime.sendMessage({ type: "bookmarkBridgeStatus" }).catch(() => null);
+  bookmarksConn.textContent = status?.connected
+    ? "Connected to the host com.superlevels.bookmarks."
+    : `Not connected${status?.error ? `: ${status.error}` : ""}. Retries every minute.`;
+}
+
+function renderBookmarkBatches(batches) {
+  bookmarksBatches.replaceChildren();
+  if (!batches.length) {
+    bookmarksBatches.innerHTML = '<div class="empty">No changes yet</div>';
+    return;
+  }
+  const undoable = batches.find((b) => !b.undone);
+  for (const batch of batches) {
+    const item = document.createElement("div");
+    item.className = "item";
+    const text = document.createElement("span");
+    const counts = Object.entries(batch.counts)
+      .map(([op, n]) => `${n} ${BOOKMARK_OP_LABELS[op] || op}`)
+      .join(", ");
+    const when = new Date(batch.time).toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+    text.textContent = `${batch.label} · ${when} · ${counts}` +
+      (batch.undone ? " · undone" : "") + (batch.error ? ` · ${batch.error}` : "");
+    item.append(text);
+    if (batch === undoable) {
+      const btn = document.createElement("button");
+      btn.textContent = "↶";
+      btn.title = "Undo this batch";
+      btn.addEventListener("click", undoBookmarkBatch);
+      item.append(btn);
+    }
+    bookmarksBatches.append(item);
+  }
+}
+
+async function undoBookmarkBatch() {
+  bookmarksNote.textContent = "Undoing…";
+  const result = await chrome.runtime.sendMessage({ type: "bookmarkBridgeUndo" })
+    .catch((e) => ({ error: e.message }));
+  bookmarksNote.textContent = result?.error ? `Undo failed: ${result.error}` : "Undone.";
+  loadBookmarkBridge();
+}
+
+bookmarksToggle.addEventListener("change", async () => {
+  await chrome.storage.local.set({ bookmarks_bridge_enabled: bookmarksToggle.checked });
+  // Give the background a moment to connect before showing the status
+  setTimeout(loadBookmarkBridge, 500);
+});
+
+document.querySelectorAll("[data-bookmark-view]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL(`bookmarks.html#${btn.dataset.bookmarkView}`) });
+  });
+});
+
+// ═══════════════════════════════════
 //  X Reply Auto-Select
 // ═══════════════════════════════════
 const xreplyToggle = document.getElementById("xreplyToggle");
@@ -956,14 +1085,17 @@ async function loadJsToggle() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.url) return;
 
-  try { jsHost = new URL(tab.url).hostname; } catch { jsHost = ""; }
+  // Content settings only apply to web pages (not chrome://, the new tab page, etc.)
+  try {
+    const url = new URL(tab.url);
+    jsHost = /^https?:$/.test(url.protocol) ? url.hostname : "";
+  } catch { jsHost = ""; }
   jsHostLabel.textContent = jsHost || "No accessible page";
 
   if (!jsHost) return;
 
   if (!chrome.contentSettings || !chrome.contentSettings.javascript) return;
-  const pattern = `https://${jsHost}/*`;
-  chrome.contentSettings.javascript.get({ primaryUrl: pattern }, (details) => {
+  chrome.contentSettings.javascript.get({ primaryUrl: tab.url }, (details) => {
     const enabled = details.setting === "allow";
     jsToggle.checked = enabled;
     updateJsUI(enabled);
@@ -977,6 +1109,10 @@ function updateJsUI(enabled) {
 }
 
 jsToggle.addEventListener("change", async () => {
+  if (!jsHost) {
+    jsToggle.checked = !jsToggle.checked;
+    return;
+  }
   const enabled = jsToggle.checked;
   updateJsUI(enabled);
 
@@ -1058,7 +1194,7 @@ async function startListening() {
     const source = audioCtx.createMediaStreamSource(stream);
     source.connect(audioCtx.destination);
 
-    // Record 5 seconds
+    // Record 10 seconds
     const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
     const chunks = [];
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
@@ -1313,7 +1449,7 @@ const AI_PROVIDERS = {
   },
   anthropic: {
     label: "Anthropic",
-    defaultModel: "claude-opus-4-8",
+    defaultModel: "claude-opus-5-5",
     signup: "https://console.anthropic.com/settings/keys",
     keyHint: "(sk-ant-...)",
   },

@@ -5,8 +5,11 @@
 (() => {
   const STYLE_ID = "sl-nocookie";
 
+  // Wrapped in :is(...):not(html, body) — CMPs (and substring matches like
+  // [class*="cookie-consent"]) put classes such as sp-message-open or
+  // cookie-consent-open on <html>/<body>, which would blank the whole page.
   const HIDE_CSS = `
-    #cookie-banner, #cookie-notice, #cookie-consent, #cookie-popup,
+    :is(#cookie-banner, #cookie-notice, #cookie-consent, #cookie-popup,
     #cookiebanner, #cookienotice, #cookieconsent, #cookiepopup,
     #cookie_banner, #cookie_notice, #cookie_consent, #cookie_popup,
     .cookie-banner, .cookie-notice, .cookie-consent, .cookie-popup,
@@ -15,15 +18,15 @@
     #gdpr-banner, #gdpr-consent, .gdpr-banner, .gdpr-consent,
     #cc-window, .cc-window, .cc-banner, .cc-overlay, .cc-revoke,
     #onetrust-banner-sdk, #onetrust-consent-sdk, .onetrust-pc-dark-filter,
-    .ot-sdk-row, #ot-sdk-btn-floating,
+    #ot-sdk-btn-floating,
     .cky-consent-container, #cky-consent,
     .didomi-popup, #didomi-host, #didomi-notice,
-    .sp-message-open, #sp_message_container_0,
+    #sp_message_container_0,
     [class*="cookie-banner"], [class*="cookie-consent"],
     [id*="cookie-banner"], [id*="cookie-consent"],
     [class*="CookieBanner"], [class*="CookieConsent"],
     .fc-consent-root, .fc-dialog-overlay, .fc-dialog,
-    .qc-cmp-showing, #qcCmpUi, .qc-cmp2-container,
+    #qcCmpUi, .qc-cmp2-container,
     .truste_box_overlay, #truste-consent-track,
     .osano-cm-dialog, .osano-cm-window,
     [aria-label="Cookie banner"], [aria-label="cookie consent"],
@@ -38,15 +41,13 @@
     #catapult-cookie-bar, .ct-ultimate-gdpr-cookie-popup,
     .cookiealert, #cookiealert, .cookie-alert,
     .consent-banner, #consent-banner, .consent-popup,
-    .privacy-notice, #privacy-notice, .privacy-banner,
-    .cc-floating, .cc-bottom, .cc-top,
     [data-testid="cookie-banner"], [data-testid="cookie-consent"],
     .snigel-cmp-framework, #snigel-cmp-framework,
     .adroll_consent_banner, #adroll_consent_container,
     .termly-consent-banner, #termly-code-snippet-support,
     .CybotCookiebotDialog, #CybotCookiebotDialog,
     #CybotCookiebotDialogBodyUnderlay,
-    .cmplz-cookiebanner, #cmplz-cookiebanner-container {
+    .cmplz-cookiebanner, #cmplz-cookiebanner-container):not(html, body) {
       display: none !important;
       visibility: hidden !important;
       height: 0 !important;
@@ -58,8 +59,8 @@
     }
     body.cookie-consent-open,
     body.modal-open-cookie,
-    body.no-scroll,
     body.sp-message-open,
+    body.qc-cmp-showing,
     body.cmplz-blocked-content-container,
     html.sp-message-open,
     html.cookie-consent-open,
@@ -87,33 +88,32 @@
     ".cc-accept", ".cc-btn.cc-dismiss", ".cc-allow",
     "[data-cookiefirst-action='accept']",
     ".cookie-accept", ".js-cookie-accept",
-    ".agree-button", "#agree-button",
     ".cli-plugin-accept-btn",
     "#cookie_action_close_header",
     ".eupopup-button_1",
     "#eu-cookie-compliance-accept",
     ".iubenda-cs-accept-btn",
-    "[data-action='accept']",
     ".osano-cm-accept-all",
     ".accept-cookies-button",
     "button[data-gdpr='accept']",
     ".js-accept-cookies",
     ".cmplz-btn.cmplz-accept",
     ".snigel-cmp-accept-all",
-    'button[title="Accept" i]',
-    'button[title="Accept all" i]',
-    'button[title="Accept All" i]',
-    'button[title="Allow all" i]',
-    'button[title="Allow All" i]',
-    'button[title="Agree" i]',
-    '[aria-label="Accept" i]',
-    '[aria-label="Accept all" i]',
     '[aria-label="Accept cookies" i]',
-    '[aria-label="Allow all" i]',
-    '[aria-label="Agree" i]',
     '[aria-label="Close" i][class*="cookie" i]',
     '[aria-label="Close" i][class*="consent" i]',
   ];
+
+  // Generic labels like "Accept" or "Agree" also appear on invitations, friend
+  // requests and terms dialogs, so only click them inside a cookie/consent box
+  const CONSENT_SCOPE = ':is([class*="cookie" i], [id*="cookie" i], [class*="consent" i], [id*="consent" i], [class*="gdpr" i], [id*="gdpr" i]):not(html, body)';
+  const GENERIC_ACCEPT = [
+    'button[title="Accept" i]', 'button[title="Accept all" i]', 'button[title="Allow all" i]',
+    'button[title="Agree" i]', '[aria-label="Accept" i]', '[aria-label="Accept all" i]',
+    '[aria-label="Allow all" i]', '[aria-label="Agree" i]',
+    '.agree-button', '#agree-button', "[data-action='accept']",
+  ];
+  CLICK_SELECTORS.push(...GENERIC_ACCEPT.map((sel) => `${CONSENT_SCOPE} ${sel}`));
 
   function injectCSS() {
     if (document.getElementById(STYLE_ID)) return;

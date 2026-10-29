@@ -10,7 +10,7 @@
     if (!el) {
       el = document.createElement("style");
       el.id = STYLE_ID;
-      document.head.appendChild(el);
+      (document.head || document.documentElement).appendChild(el);
     }
     el.textContent = css || "";
   }

@@ -1,12 +1,23 @@
-const DEFAULT_TIMEOUT_MIN = 5;
+importScripts("bookmarkbridge.js");
+
+const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // 3 days
 const CHECK_INTERVAL_MIN = 1;
+const CLOSED_PAGE_URL = chrome.runtime.getURL("closed.html");
+const MAX_CLOSED_TABS = 2000;
 
 // { tabId: lastActiveTimestamp }
+// Mirrored to storage.session: the MV3 service worker is killed when idle,
+// and without this every restart would reset all inactivity timers.
 const tabActivity = {};
+
+function saveTabActivity() {
+  chrome.storage.session.set({ tabActivity });
+}
 
 // Record activity for a tab
 function markActive(tabId) {
   tabActivity[tabId] = Date.now();
+  saveTabActivity();
 }
 
 // On tab activated (user switches to it)
@@ -29,20 +40,118 @@ chrome.tabs.onCreated.addListener((tab) => {
 // On tab removed, clean up
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete tabActivity[tabId];
+  saveTabActivity();
 });
 
-// Initialize: mark all existing tabs as active now
-chrome.tabs.query({}, (tabs) => {
+// Initialize: restore timestamps from before the worker restarted. Tabs we have
+// never seen (browser restart, extension install/update) fall back to Chrome's
+// own lastAccessed, which survives restarts — the time Chrome was closed is then
+// discounted by the gap check in settleAwayTime. Inactivity never counts from
+// before the first run (install), so old tabs aren't mass-closed right away.
+const tabActivityReady = (async () => {
+  const [{ tabActivity: saved = {} }, { countingSince: storedSince }, tabs] = await Promise.all([
+    chrome.storage.session.get(["tabActivity"]),
+    chrome.storage.local.get(["countingSince"]),
+    chrome.tabs.query({}),
+  ]);
+  const now = Date.now();
+  const countingSince = storedSince ?? now;
+  if (storedSince === undefined) chrome.storage.local.set({ countingSince });
   for (const tab of tabs) {
-    markActive(tab.id);
+    // Events that arrived during startup are newer than the saved values
+    tabActivity[tab.id] ??= saved[tab.id] ?? Math.max(tab.lastAccessed ?? 0, countingSince);
   }
+  saveTabActivity();
+})();
+
+// Periodic cleanup check. Re-creating an existing alarm restarts its period,
+// so only create it once — otherwise frequent worker restarts postpone it forever.
+chrome.alarms.get("tabCleanup").then((alarm) => {
+  if (!alarm) chrome.alarms.create("tabCleanup", { periodInMinutes: CHECK_INTERVAL_MIN });
 });
 
-// Periodic cleanup check
-chrome.alarms.create("tabCleanup", { periodInMinutes: CHECK_INTERVAL_MIN });
+// ── Time away doesn't count as tab inactivity ──
+// While the user is idle or the screen is locked, timers are paused: on return
+// every tab's timestamp is shifted forward by the time away. awaySince lives in
+// storage.session because the worker is usually killed while the user is away;
+// lastCleanupCheck lives in storage.local so time with Chrome closed is skipped too.
+const IDLE_DETECTION_SEC = 60;
+chrome.idle.setDetectionInterval(IDLE_DETECTION_SEC);
+
+// Only tabs last active before the away period started are shifted; activity
+// recorded during it (e.g. a tab opened right after a browser restart) is real
+function shiftTabActivity(ms, awayStart) {
+  for (const id of Object.keys(tabActivity)) {
+    if (tabActivity[id] < awayStart) tabActivity[id] += ms;
+  }
+  saveTabActivity();
+}
+
+// Serialized so the idle event and the alarm can't both apply the same away period
+let awayChain = Promise.resolve();
+function withAwayState(fn) {
+  awayChain = awayChain.then(async () => {
+    await tabActivityReady;
+    const [{ awaySince = null }, { lastCleanupCheck = null }] = await Promise.all([
+      chrome.storage.session.get(["awaySince"]),
+      chrome.storage.local.get(["lastCleanupCheck"]),
+    ]);
+    await fn({ awaySince, lastCleanupCheck });
+  }).catch(() => {});
+  return awayChain;
+}
+
+function markAway(state) {
+  return withAwayState(async ({ awaySince }) => {
+    if (awaySince) return;
+    // "idle" fires only after IDLE_DETECTION_SEC without input, so the user left that long ago
+    const since = Date.now() - (state === "idle" ? IDLE_DETECTION_SEC * 1000 : 0);
+    await chrome.storage.session.set({ awaySince: since });
+  });
+}
+
+function markBack() {
+  return withAwayState(async ({ awaySince }) => {
+    if (!awaySince) return;
+    const now = Date.now();
+    shiftTabActivity(now - awaySince, awaySince);
+    // The away period is now accounted for; don't let the gap check count it again
+    await chrome.storage.local.set({ lastCleanupCheck: now });
+    await chrome.storage.session.remove("awaySince");
+  });
+}
+
+chrome.idle.onStateChanged.addListener((state) => {
+  if (state === "active") markBack();
+  else markAway(state);
+});
+
+// Returns false while the user is away, i.e. when nothing should be closed
+async function settleAwayTime() {
+  const state = await chrome.idle.queryState(IDLE_DETECTION_SEC);
+  if (state !== "active") {
+    await markAway(state);
+    return false;
+  }
+  // Back, but the "active" event may not have been delivered yet
+  await markBack();
+  // The machine slept without ever reporting idle (e.g. lid closed mid-use), or
+  // Chrome was closed: no checks ran, so a long gap since the last one is time away
+  await withAwayState(async ({ lastCleanupCheck }) => {
+    const now = Date.now();
+    const intervalMs = CHECK_INTERVAL_MIN * 60 * 1000;
+    if (lastCleanupCheck && now - lastCleanupCheck > 2 * intervalMs) {
+      shiftTabActivity(now - lastCleanupCheck - intervalMs, lastCleanupCheck);
+    }
+    await chrome.storage.local.set({ lastCleanupCheck: now });
+  });
+  return true;
+}
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== "tabCleanup") return;
+
+  if (!(await settleAwayTime())) return;
 
   const { exclusions = [], enabled = true, timeoutMin = DEFAULT_TIMEOUT_MIN } =
     await chrome.storage.local.get(["exclusions", "enabled", "timeoutMin"]);
@@ -70,6 +179,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (active) activeTabs.add(active.id);
   }
 
+  const closed = [];
   for (const tab of tabs) {
     // Skip active tabs
     if (activeTabs.has(tab.id)) {
@@ -77,8 +187,19 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       continue;
     }
 
-    // Skip pinned tabs
-    if (tab.pinned) continue;
+    // Skip pinned tabs and our own closed-tabs list
+    if (tab.pinned || tab.url?.startsWith(CLOSED_PAGE_URL)) continue;
+
+    // Skip tabs playing audio (background music, calls); the inactivity
+    // timer starts once the audio stops
+    if (tab.audible) {
+      markActive(tab.id);
+      continue;
+    }
+
+    // Skip incognito tabs: saving them would leak private URLs into the
+    // persistent closed-tabs list, and closing without saving would lose them
+    if (tab.incognito) continue;
 
     // Skip if it's the last tab in its window
     if (windowTabCounts[tab.windowId] <= 1) continue;
@@ -101,40 +222,89 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const lastActive = tabActivity[tab.id] || 0;
     if (now - lastActive >= timeoutMs) {
       windowTabCounts[tab.windowId]--;
-      // Save to closed history before removing
-      saveClosedTab(tab);
+      closed.push(tab);
       chrome.tabs.remove(tab.id);
       delete tabActivity[tab.id];
     }
   }
-});
+  saveTabActivity();
 
-// Save closed tab to history
-function saveClosedTab(tab) {
-  if (!tab.url || tab.url.startsWith("chrome://")) return;
-  chrome.storage.local.get(["closed_tabs"], (data) => {
-    const closed = data.closed_tabs || [];
-    closed.unshift({
+  const saved = closed.filter((tab) => tab.url && !tab.url.startsWith("chrome://"));
+  if (!saved.length) return;
+  await updateClosedTabs((list) => [
+    ...saved.map((tab) => ({
+      id: crypto.randomUUID(),
       url: tab.url,
       title: tab.title || tab.url,
-      favIconUrl: tab.favIconUrl || "",
-      time: Date.now(),
-    });
-    if (closed.length > 50) closed.length = 50;
-    chrome.storage.local.set({ closed_tabs: closed });
-  });
+      time: now,
+    })),
+    ...list,
+  ]);
+  await ensureClosedPage(saved[0].windowId);
+});
+
+// ── Closed tabs list (OneTab-style page) ──
+// Serialize all read-modify-write cycles on closed_tabs, so the cleanup
+// alarm and edits from the closed-tabs page can't overwrite each other
+let closedTabsChain = Promise.resolve();
+function updateClosedTabs(fn) {
+  closedTabsChain = closedTabsChain
+    .then(async () => {
+      const { closed_tabs = [] } = await chrome.storage.local.get(["closed_tabs"]);
+      const next = fn(closed_tabs).slice(0, MAX_CLOSED_TABS);
+      await chrome.storage.local.set({ closed_tabs: next });
+    })
+    .catch(() => {});
+  return closedTabsChain;
+}
+
+async function findClosedPage() {
+  const tabs = await chrome.tabs.query({});
+  return tabs.find((tab) => tab.url?.startsWith(CLOSED_PAGE_URL));
+}
+
+// Open the closed-tabs page in the background unless it's already open
+async function ensureClosedPage(windowId) {
+  if (await findClosedPage()) return;
+  await chrome.tabs.create({ url: CLOSED_PAGE_URL, windowId, index: 0, active: false }).catch(() => {});
+}
+
+// Bring the closed-tabs page to front, opening it if needed
+async function focusClosedPage() {
+  const existing = await findClosedPage();
+  if (existing) {
+    await chrome.tabs.update(existing.id, { active: true });
+    await chrome.windows.update(existing.windowId, { focused: true });
+  } else {
+    await chrome.tabs.create({ url: CLOSED_PAGE_URL });
+  }
 }
 
 // ═══════════════════════════════════
 //  Redirect Tracer
 // ═══════════════════════════════════
 // { tabId: { chain: [{url, statusCode, statusLine}], finalUrl, finalStatus } }
+// Mirrored to storage.session per tab, so the popup still gets the chain after
+// the service worker was killed while idle.
 const redirectData = {};
+const redirectKey = (tabId) => "redirects_" + tabId;
+
+function saveRedirects(tabId) {
+  chrome.storage.session.set({ [redirectKey(tabId)]: redirectData[tabId] });
+}
+
+async function getRedirects(tabId) {
+  if (redirectData[tabId]) return redirectData[tabId];
+  const key = redirectKey(tabId);
+  const { [key]: saved } = await chrome.storage.session.get([key]);
+  return saved || { chain: [], finalUrl: null, finalStatus: null };
+}
 
 // When a new main-frame navigation starts, reset the chain
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
   if (details.frameId !== 0) return;
   redirectData[details.tabId] = { chain: [], finalUrl: null, finalStatus: null };
+  saveRedirects(details.tabId);
 });
 
 // Capture each redirect hop
@@ -150,6 +320,7 @@ chrome.webRequest.onBeforeRedirect.addListener(
       statusLine: details.statusLine || "",
       redirectUrl: details.redirectUrl,
     });
+    saveRedirects(details.tabId);
   },
   { urls: ["<all_urls>"] }
 );
@@ -163,6 +334,7 @@ chrome.webRequest.onCompleted.addListener(
     }
     redirectData[details.tabId].finalUrl = details.url;
     redirectData[details.tabId].finalStatus = details.statusCode;
+    saveRedirects(details.tabId);
   },
   { urls: ["<all_urls>"] }
 );
@@ -170,12 +342,27 @@ chrome.webRequest.onCompleted.addListener(
 // Clean up on tab close
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete redirectData[tabId];
+  chrome.storage.session.remove(redirectKey(tabId));
 });
 
 // Respond to popup requests
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "closedRemove") {
+    const ids = new Set(msg.ids);
+    updateClosedTabs((list) => list.filter((t) => !ids.has(t.id))).then(() => sendResponse({}));
+    return true;
+  }
+  if (msg.type === "closedOpenPage") {
+    focusClosedPage().then(() => sendResponse({}));
+    return true;
+  }
   if (msg.type === "getRedirects") {
-    sendResponse(redirectData[msg.tabId] || { chain: [], finalUrl: null, finalStatus: null });
+    getRedirects(msg.tabId).then(sendResponse);
+    return true;
+  }
+  if (msg.type === "adblockSync") {
+    syncAdblock().then(() => sendResponse({}));
+    return true;
   }
   if (msg.type === "pip") {
     chrome.scripting.executeScript({
@@ -251,6 +438,10 @@ chrome.runtime.onInstalled.addListener(() => {
       chrome.storage.local.set(defaults);
     }
   });
+  // Older versions stored closed tabs without ids (and with favicon URLs)
+  updateClosedTabs((list) =>
+    list.map(({ favIconUrl, ...t }) => (t.id ? t : { ...t, id: crypto.randomUUID() }))
+  );
 });
 
 // ═══════════════════════════════════
@@ -365,4 +556,144 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   // Drop tracking params/hash so the URL matches existing snapshots
   const clean = url.origin + url.pathname;
   chrome.tabs.update(details.tabId, { url: "https://archive.is/" + clean }).catch(() => {});
+});
+
+// ═══════════════════════════════════
+//  Ad Block — EasyList + EasyPrivacy compiled to declarativeNetRequest
+//  (adblock/build.mjs). Chrome does the network blocking itself; here we
+//  only load the rules, keep the per-site pause rule, and inject the
+//  element-hiding CSS for ad slots the blocked requests leave behind.
+//  Optional: the lists aren't committed, and until they're built Ad Block
+//  stays off. That's why they're dynamic rules rather than a static
+//  ruleset — a manifest ruleset whose file is missing stops the whole
+//  extension from loading.
+// ═══════════════════════════════════
+const ADBLOCK_CSS_ID = "sl-adblock-generic";
+const ADBLOCK_PAUSE_RULE_ID = 1;
+// Dynamic rule ids 1..99_999 belong to Ad Block; others are left alone
+// (100_000..109_999: tracker panel)
+const ADBLOCK_FIRST_LIST_RULE_ID = 2;
+const ADBLOCK_LAST_LIST_RULE_ID = 99_999;
+
+// adblock/meta.json is written last by the build; null when not built
+let adblockMeta;
+function getAdblockMeta() {
+  adblockMeta ??= fetch(chrome.runtime.getURL("adblock/meta.json"))
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  return adblockMeta;
+}
+
+let adblockCosmetic = null;
+function getAdblockCosmetic() {
+  adblockCosmetic ??= fetch(chrome.runtime.getURL("adblock/cosmetic.json"))
+    .then((r) => r.json())
+    .then((c) => ({ ...c, generichide: new Set(c.generichide), elemhide: new Set(c.elemhide) }));
+  return adblockCosmetic;
+}
+
+async function getAdblockSettings() {
+  const [d, meta] = await Promise.all([
+    chrome.storage.local.get(["adblock_enabled", "adblock_paused"]),
+    getAdblockMeta(),
+  ]);
+  return { enabled: d.adblock_enabled !== false && !!meta, paused: d.adblock_paused || [], meta };
+}
+
+// Dynamic rules persist across worker restarts and extension reloads, so
+// they're only replaced when a different build is wanted (null: none)
+async function loadAdblockRules(version) {
+  const dnr = chrome.declarativeNetRequest;
+  const { adblock_rules_version = null } = await chrome.storage.local.get(["adblock_rules_version"]);
+  if (adblock_rules_version === version) return;
+  const rules = version
+    ? await fetch(chrome.runtime.getURL("adblock/rules.json")).then((r) => r.json())
+    : [];
+  const existing = await dnr.getDynamicRules();
+  await dnr.updateDynamicRules({
+    removeRuleIds: existing.map((r) => r.id)
+      .filter((id) => id >= ADBLOCK_FIRST_LIST_RULE_ID && id <= ADBLOCK_LAST_LIST_RULE_ID),
+    addRules: rules.map((r, i) => ({ ...r, id: ADBLOCK_FIRST_LIST_RULE_ID + i })),
+  });
+  await chrome.storage.local.set({ adblock_rules_version: version });
+}
+
+// "a.b.example.com" → ["a.b.example.com", "b.example.com", "example.com"]
+function hostChain(host) {
+  const parts = host.split(".");
+  return parts.slice(0, Math.max(1, parts.length - 1)).map((_, i) => parts.slice(i).join("."));
+}
+
+let adblockSyncChain = Promise.resolve();
+function syncAdblock() {
+  // Serialize so a toggle during startup can't race the initial sync
+  adblockSyncChain = adblockSyncChain.then(doSyncAdblock).catch((e) => console.warn("adblock sync:", e));
+  return adblockSyncChain;
+}
+
+async function doSyncAdblock() {
+  const { enabled, paused, meta } = await getAdblockSettings();
+  const dnr = chrome.declarativeNetRequest;
+
+  await loadAdblockRules(enabled ? meta.version : null);
+  // Paused sites: allow everything in pages whose top frame is on that site
+  await dnr.updateDynamicRules({
+    removeRuleIds: [ADBLOCK_PAUSE_RULE_ID],
+    addRules: enabled && paused.length ? [{
+      id: ADBLOCK_PAUSE_RULE_ID,
+      priority: 100,
+      action: { type: "allowAllRequests" },
+      condition: { requestDomains: paused, resourceTypes: ["main_frame"] },
+    }] : [],
+  });
+  await dnr.setExtensionActionOptions({ displayActionCountAsBadgeText: enabled });
+
+  // Generic hiding CSS goes on every site except paused ones and those the
+  // lists exempt ($generichide) — re-register to update the exclusions
+  await chrome.scripting.unregisterContentScripts({ ids: [ADBLOCK_CSS_ID] }).catch(() => {});
+  if (!enabled) return;
+  const cosmetic = await getAdblockCosmetic();
+  const exempt = [...paused, ...cosmetic.generichide, ...cosmetic.elemhide];
+  await chrome.scripting.registerContentScripts([{
+    id: ADBLOCK_CSS_ID,
+    matches: ["<all_urls>"],
+    excludeMatches: exempt.map((h) => `*://*.${h}/*`),
+    css: ["adblock/generic.css"],
+    runAt: "document_start",
+    allFrames: true,
+  }]);
+}
+
+syncAdblock();
+chrome.runtime.onInstalled.addListener(syncAdblock);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && (changes.adblock_enabled || changes.adblock_paused)) syncAdblock();
+});
+
+// Site-specific hiding rules, plus generic selectors some sites un-hide
+// (so they can't live in the global stylesheet)
+async function adblockCssFor(host) {
+  const { enabled, paused } = await getAdblockSettings();
+  if (!enabled) return "";
+  const chain = hostChain(host);
+  if (chain.some((h) => paused.includes(h))) return "";
+  const c = await getAdblockCosmetic();
+  if (chain.some((h) => c.elemhide.has(h))) return "";
+
+  const selectors = chain.flatMap((h) => c.specific[h] || []);
+  if (!chain.some((h) => c.generichide.has(h))) selectors.push(...c.excepted);
+  const exceptions = new Set(chain.flatMap((h) => c.exceptions[h] || []));
+  return selectors
+    .filter((s) => !exceptions.has(s))
+    .map((s) => `${s}{display:none!important}`)
+    .join("\n");
+}
+
+chrome.webNavigation.onCommitted.addListener(async ({ tabId, frameId, url }) => {
+  let host;
+  try { host = new URL(url).hostname; } catch { return; }
+  if (!/^https?:/.test(url)) return;
+  const css = await adblockCssFor(host);
+  if (!css) return;
+  chrome.scripting.insertCSS({ target: { tabId, frameIds: [frameId] }, css, origin: "USER" }).catch(() => {});
 });
