@@ -5,7 +5,10 @@
 //    rules.json    — declarativeNetRequest ruleset (network blocking)
 //    generic.css   — generic element hiding, injected on every site
 //    cosmetic.json — site-specific element hiding + exceptions
-//    meta.json     — build version; its presence turns Ad Block on
+//    extra-<id>.*  — the same three for each optional extra list (Fanboy's
+//                    cookie/social/newsletter/notification/annoyance lists),
+//                    switched on per list in the popup
+//    meta.json     — build version and list stats; its presence turns Ad Block on
 //  The outputs aren't committed: Ad Block is optional, and the extension
 //  works without them.
 //  ABP network filters map almost 1:1 onto DNR (urlFilter uses the same
@@ -14,7 +17,8 @@
 //  procedural cosmetic filters (#?#).
 //
 //  Usage: node adblock/build.mjs [easylist.txt easyprivacy.txt]
-//  With no arguments the lists are downloaded from easylist.to.
+//  With no arguments every list (core and extras) is downloaded. With list
+//  files as arguments, only the core lists are built, from those files.
 // ═══════════════════════════════════
 import { createHash } from "node:crypto";
 import { readFile, rename, writeFile } from "node:fs/promises";
@@ -26,6 +30,16 @@ const LISTS = [
   "https://easylist.to/easylist/easylist.txt",
   "https://easylist.to/easylist/easyprivacy.txt",
 ];
+// Fanboy's lists, from the EasyList authors (CC BY 3.0)
+const FANBOY = "https://secure.fanboy.co.nz/";
+const EXTRAS = [
+  { id: "cookies", title: "Cookie notices", url: FANBOY + "fanboy-cookiemonster.txt" },
+  { id: "social", title: "Social widgets", url: FANBOY + "fanboy-social.txt" },
+  { id: "newsletters", title: "Newsletter pop-ups", url: FANBOY + "fanboy-newsletter.txt" },
+  { id: "notifications", title: "Notification prompts", url: FANBOY + "fanboy-notifications.txt" },
+  { id: "annoyances", title: "Other annoyances", url: FANBOY + "fanboy-annoyance.txt",
+    without: ["cookies", "social", "newsletters", "notifications"] },
+];
 const DOMAINS_PER_RULE = 1000;
 // The rules are loaded as dynamic rules, capped at 30,000 per extension;
 // leave room for the per-site pause rule
@@ -33,6 +47,7 @@ const MAX_RULES = 29000;
 // Far fewer means a download went wrong (e.g. an error page served as 200)
 const MIN_RULES = 5000;
 const MIN_SELECTORS = 1000;
+const MIN_EXTRA_SELECTORS = 100;
 // Exceptions beat blocks, $important blocks beat exceptions. The per-site
 // pause rule (dynamic, priority 100 in background.js) beats everything.
 const PRIORITY = { block: 1, allow: 2, important: 3 };
@@ -270,46 +285,86 @@ function compileCosmetic(lines) {
 
 // ── Main ──
 
-const texts = await loadLists(process.argv.slice(2));
-const lines = texts.flatMap((t) => t.split("\n")).map((l) => l.trim())
+const filterLines = (text) => text.split("\n").map((l) => l.trim())
   .filter((l) => l && !l.startsWith("!") && !l.startsWith("["));
 const isCosmetic = (l) => /#[@?$%]?#/.test(l) && !l.startsWith("@@") && !l.startsWith("||") && !l.startsWith("|");
 
-const { rules, skipped } = compileNetwork(lines.filter((l) => !isCosmetic(l)));
-const { generic, cosmetic } = compileCosmetic(lines);
+// Compile one list (or several merged) into its three output files
+function compileList(name, lines, { minRules, minSelectors }) {
+  const { rules, skipped } = compileNetwork(lines.filter((l) => !isCosmetic(l)));
+  const { generic, cosmetic } = compileCosmetic(lines);
 
-const invalid = rules.map((r) => [ruleError(r), r]).filter(([e]) => e);
-if (invalid.length) {
-  for (const [e, r] of invalid.slice(0, 5)) console.error(`${e}: ${JSON.stringify(r)}`);
-  throw new Error(`${invalid.length} invalid rules, nothing written`);
-}
-if (rules.length < MIN_RULES || generic.length < MIN_SELECTORS) {
-  throw new Error(`only ${rules.length} rules and ${generic.length} selectors; are the lists right? Nothing written`);
+  const invalid = rules.map((r) => [ruleError(r), r]).filter(([e]) => e);
+  if (invalid.length) {
+    for (const [e, r] of invalid.slice(0, 5)) console.error(`${e}: ${JSON.stringify(r)}`);
+    throw new Error(`${name}: ${invalid.length} invalid rules, nothing written`);
+  }
+  if (rules.length < minRules || generic.length < minSelectors) {
+    throw new Error(`${name}: only ${rules.length} rules and ${generic.length} selectors; is the list right? Nothing written`);
+  }
+  const domains = rules.reduce((n, r) => n + (r.condition.requestDomains?.length ?? 0), 0);
+  console.log(`${name.padEnd(14)} ${rules.length} rules (${domains} domains merged, ${skipped} filters skipped), ` +
+    `${generic.length} generic selectors, ${Object.keys(cosmetic.specific).length} sites`);
+  return {
+    rules,
+    selectors: generic.length,
+    // One rule per selector: an invalid selector then only drops itself,
+    // not the whole selector list it's grouped with
+    files: {
+      rules: "[\n" + rules.map((r) => JSON.stringify(r)).join(",\n") + "\n]\n",
+      css: generic.map((s) => `${s}{display:none!important}`).join("\n") + "\n",
+      cosmetic: JSON.stringify(cosmetic) + "\n",
+    },
+  };
 }
 
-// One rule per selector: an invalid selector then only drops itself,
-// not the whole selector list it's grouped with
+// With list files as arguments only the core lists are built, from those files
+const args = process.argv.slice(2);
+const core = compileList("core", (await loadLists(args)).flatMap(filterLines), { minRules: MIN_RULES, minSelectors: MIN_SELECTORS });
 const files = {
-  "rules.json": "[\n" + rules.map((r) => JSON.stringify(r)).join(",\n") + "\n]\n",
-  "generic.css": generic.map((s) => `${s}{display:none!important}`).join("\n") + "\n",
-  "cosmetic.json": JSON.stringify(cosmetic) + "\n",
+  "rules.json": core.files.rules,
+  "generic.css": core.files.css,
+  "cosmetic.json": core.files.cosmetic,
 };
+
+// Optional extra lists, each switchable in the popup. Every filter in an
+// extra counts against the same dynamic-rule budget as the core lists.
+const extras = [];
+if (!args.length) {
+  const texts = await Promise.all(EXTRAS.map(async ({ id, url }) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${id} (${url}): HTTP ${res.status}`);
+    return [id, new Set(filterLines(await res.text()))];
+  }));
+  const linesById = Object.fromEntries(texts);
+  for (const { id, title, without = [] } of EXTRAS) {
+    // e.g. the Annoyance list already contains the cookie/social/… lists
+    const lines = [...linesById[id]].filter((l) => !without.some((w) => linesById[w].has(l)));
+    const list = compileList(id, lines, { minRules: 0, minSelectors: MIN_EXTRA_SELECTORS });
+    files[`extra-${id}.rules.json`] = list.files.rules;
+    files[`extra-${id}.css`] = list.files.css;
+    files[`extra-${id}.cosmetic.json`] = list.files.cosmetic;
+    extras.push({ id, title, rules: list.rules.length, selectors: list.selectors });
+  }
+}
+
+// All lists can be switched on at once, so together they must fit
+const total = core.rules.length + extras.reduce((n, e) => n + e.rules, 0);
+if (total > MAX_RULES) throw new Error(`${total} rules with every list on, over the ${MAX_RULES} budget; nothing written`);
+
 const hash = createHash("sha256");
 for (const text of Object.values(files)) hash.update(text);
 // Written last: background.js only uses the other files once this exists
 files["meta.json"] = JSON.stringify({
   version: hash.digest("hex").slice(0, 16),
   builtAt: new Date().toISOString(),
-  rules: rules.length,
-  selectors: generic.length,
+  rules: core.rules.length,
+  selectors: core.selectors,
+  extras,
 }) + "\n";
 
 // Write everything to temp files first, so an interrupted build can't
 // leave a mix of old and new outputs
 for (const [name, text] of Object.entries(files)) await writeFile(join(OUT_DIR, name + ".tmp"), text);
 for (const name of Object.keys(files)) await rename(join(OUT_DIR, name + ".tmp"), join(OUT_DIR, name));
-
-const domains = rules.reduce((n, r) => n + (r.condition.requestDomains?.length ?? 0), 0);
-console.log(`rules.json     ${rules.length} rules (${domains} domains merged), ${skipped} filters skipped`);
-console.log(`generic.css    ${generic.length} selectors`);
-console.log(`cosmetic.json  ${Object.keys(cosmetic.specific).length} sites, ${cosmetic.excepted.length} excepted generic selectors`);
+console.log(`${total} rules with every list on (budget ${MAX_RULES})`);

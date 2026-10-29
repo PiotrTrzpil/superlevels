@@ -56,7 +56,8 @@ test("popup Ads page explains the setup", async () => {
   await page.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
   await page.waitForLoadState("load");
   await page.waitForTimeout(300); // popup restores the last-open page on load
-  await page.click('.nav button[data-page="adblock"]');
+  await page.click('.nav button[data-group="privacy"]');
+  await page.click('.subnav button[data-page="blocking"]');
   await page.waitForFunction(() => document.getElementById("adblockBuild").textContent);
   assert.equal(await page.textContent("#adblockStatus"), "NOT BUILT");
   assert.equal(await page.isDisabled("#adblockToggle"), true);

@@ -10,13 +10,15 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #1a1a2e;
       color: #e0e0e0;
-      display: flex;
-      flex-direction: row;
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      grid-template-rows: auto 1fr;
       overflow: hidden;
     }
 
     /* ── Side nav ── */
     .nav {
+      grid-row: 1 / -1;
       display: flex;
       flex-direction: column;
       width: 110px;
@@ -47,8 +49,80 @@
       border-left-color: #e94560;
     }
 
+    /* ── Sub nav: the pages of the active group ── */
+    .subnav {
+      grid-column: 2;
+      grid-row: 1;
+      display: none;
+      gap: 4px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #2a2a4a;
+      overflow-x: auto;
+    }
+    .subnav.active { display: flex; }
+    .subnav::-webkit-scrollbar { height: 0; }
+    .subnav button {
+      flex-shrink: 0;
+      padding: 5px 10px;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      color: #888;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .subnav button:hover { color: #ccc; }
+    .subnav button:focus { outline: none; }
+    .subnav button.active {
+      color: #e94560;
+      border-color: #e94560;
+    }
+    /* A group with a single page needs no subnav */
+    .subnav.active:has(> button:only-child) { display: none; }
+
+    /* ── Feature rows: a switch, with details that expand ── */
+    .feat-group {
+      font-size: 11px; font-weight: 600; color: #666;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 14px 2px 6px;
+    }
+    .feat-group:first-child { margin-top: 0; }
+    .feat { background: #16213e; border-radius: 8px; margin-bottom: 6px; }
+    .feat-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; cursor: pointer; user-select: none;
+    }
+    .feat-icon { width: 22px; text-align: center; font-size: 15px; flex-shrink: 0; }
+    .feat-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; }
+    .feat-sub {
+      font-size: 11px; font-weight: 400; color: #777; margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .feat-sub .indicator {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    }
+    .feat-sub .indicator.on { background: #4caf50; }
+    .feat-sub .indicator.off { background: #e94560; }
+    .feat-head .status { font-size: 10px; font-weight: 700; }
+    .feat-head .status.on { color: #e94560; }
+    .feat-head .status.off { color: #555; }
+    .feat-head .switch { flex-shrink: 0; }
+    .feat-chev { font-size: 9px; color: #555; transition: transform 0.2s; }
+    .feat.open .feat-chev { transform: rotate(90deg); }
+    .feat-body { display: none; padding: 0 12px 12px; }
+    .feat.open .feat-body { display: block; }
+    .feat-body .xdim-themes, .feat-body .xdim-custom-hue, .feat-body .toggle-row,
+    .feat-body .unhook-feature, .feat-body .nocookie-stats { background: #0f1a33; }
+    .feat-body .xdim-note { text-align: left; padding: 6px 0 0; }
+    .feat-list {
+      margin: 0 0 4px; padding-left: 18px;
+      font-size: 12px; color: #999; line-height: 1.7;
+    }
+
     /* ── Pages ── */
-    .page { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .page { grid-column: 2; grid-row: 2; display: none; flex-direction: column; overflow: hidden; }
     .page.active { display: flex; }
     .page-body { flex: 1; overflow-y: auto; padding: 14px; }
     .page-body::-webkit-scrollbar { width: 4px; }
@@ -469,6 +543,42 @@
     }
     .nocookie-stats b { color: #e0e0e0; }
 
+    /* ── Trackers ── */
+    .trk-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 4px;
+    }
+    .trk-summary { font-size: 13px; font-weight: 600; }
+    .trk-reload {
+      padding: 4px 10px; background: #16213e; color: #ccc;
+      border: 1px solid #2a2a4a; border-radius: 6px;
+      font-size: 11px; cursor: pointer;
+    }
+    .trk-reload:hover { color: #fff; border-color: #e94560; }
+    .trk-group {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #888; margin: 12px 0 6px;
+    }
+    .trk-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; background: #16213e;
+      border-radius: 8px; margin-bottom: 5px; font-size: 12px;
+    }
+    .trk-name {
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .trk-company { color: #666; margin-left: 4px; }
+    .trk-count { color: #666; font-size: 11px; }
+    .trk-chip {
+      font-size: 10px; padding: 2px 6px; border-radius: 4px;
+      background: #2a2a4a; color: #aaa;
+    }
+    .trk-chip.blocked { background: #3c1a1a; color: #f36a6a; }
+    .trk-chip.partly { background: #3c321a; color: #f3c46a; }
+    .trk-row .switch { flex-shrink: 0; }
+    .trk-empty { color: #555; font-size: 12px; text-align: center; padding: 20px 0; }
+
     /* ── Live CSS Editor ── */
     .livecss-host {
       font-size: 12px; color: #666;
@@ -734,27 +844,39 @@
 </head>
 <body>
 
-  <!-- Nav -->
+  <!-- Nav: feature groups; each group's pages are in its subnav -->
   <div class="nav">
+    <button class="active" data-group="organize">🗂 Organize</button>
+    <button data-group="page">⚡ This page</button>
+    <button data-group="privacy">🛡 Privacy</button>
+    <button data-group="sites">🌐 Sites</button>
+    <button data-group="look">🎨 Look</button>
+    <button data-group="dev">🛠 Dev</button>
+  </div>
+  <div class="subnav active" data-group="organize">
     <button class="active" data-page="tabcleaner">🚮 Tabs</button>
-    <button data-page="cookies">🍪 Cookies</button>
-    <button data-page="redirects">🔀 Redirects</button>
-    <button data-page="darkmode">🌙 Dark</button>
-    <button data-page="xdim">𝕏 Dim</button>
-    <button data-page="xunhook">𝕏 Unhook</button>
-    <button data-page="xreply">𝕏 Reply</button>
-    <button data-page="photopea">🫛 Photopea</button>
-    <button data-page="archive">🗄 No paywall</button>
     <button data-page="bookmarks">🔖 Bookmarks</button>
-    <button data-page="jstoggle">⚡ JS</button>
-    <button data-page="adblock">🛡 Ads</button>
-    <button data-page="nocookie">🚫 Cookies=OK</button>
-    <button data-page="livecss">🎨 CSS</button>
-    <button data-page="unhook">📺 YT Unhook</button>
-    <button data-page="music">🎵 Music</button>
+  </div>
+  <div class="subnav" data-group="page">
     <button data-page="summarize">✨ Summarize</button>
     <button data-page="pip">🖼 PiP</button>
-    <button data-page="jsonformat">{} JSON</button>
+    <button data-page="music">🎵 Music</button>
+  </div>
+  <div class="subnav" data-group="privacy">
+    <button data-page="blocking">🛡 Blocking</button>
+    <button data-page="trackers">👁 Trackers</button>
+  </div>
+  <div class="subnav" data-group="sites">
+    <button data-page="sites">🌐 Sites</button>
+  </div>
+  <div class="subnav" data-group="look">
+    <button data-page="darkmode">🌙 Dark mode</button>
+    <button data-page="livecss">🎨 Live CSS</button>
+  </div>
+  <div class="subnav" data-group="dev">
+    <button data-page="cookies">🍪 Cookies</button>
+    <button data-page="redirects">🔀 Redirects</button>
+    <button data-page="toggles">⚡ Toggles</button>
   </div>
 
   <!-- ═══ Tab Cleaner Page ═══ -->
@@ -864,101 +986,129 @@
     </div>
   </div>
 
-  <!-- ═══ X Dim Mode Page ═══ -->
-  <div class="page" id="page-xdim">
+  <!-- ═══ Sites Page: per-site fixes ═══ -->
+  <div class="page" id="page-sites">
     <div class="page-body">
-      <div class="xdim-big-toggle">
-        <div class="xlogo">𝕏</div>
-        <label class="big-switch">
-          <input type="checkbox" id="xdimToggle">
-          <span class="big-slider"></span>
-        </label>
-        <div class="status off" id="xdimStatus">OFF</div>
-      </div>
+      <div class="feat-group">𝕏 / Twitter</div>
 
-      <div class="xdim-themes">
-        <label>Theme</label>
-        <div class="xdim-theme-dots">
-          <div class="xdim-dot active" data-theme="dim" title="Dim"></div>
-          <div class="xdim-dot" data-theme="slate" title="Slate"></div>
-          <div class="xdim-dot" data-theme="jade" title="Jade"></div>
-          <div class="xdim-dot" data-theme="plum" title="Plum"></div>
-          <div class="xdim-dot" data-theme="dusk" title="Dusk"></div>
-          <div class="xdim-dot" data-theme="ember" title="Ember"></div>
-          <div class="xdim-dot" data-theme="custom" title="Custom"></div>
+      <div class="feat" data-feat="xdim">
+        <div class="feat-head">
+          <span class="feat-icon">🌗</span>
+          <div class="feat-title">Dim mode<div class="feat-sub">Custom dim theme for less eye strain</div></div>
+          <span class="status off" id="xdimStatus">OFF</span>
+          <label class="switch"><input type="checkbox" id="xdimToggle"><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="xdim-themes">
+            <label>Theme</label>
+            <div class="xdim-theme-dots">
+              <div class="xdim-dot active" data-theme="dim" title="Dim"></div>
+              <div class="xdim-dot" data-theme="slate" title="Slate"></div>
+              <div class="xdim-dot" data-theme="jade" title="Jade"></div>
+              <div class="xdim-dot" data-theme="plum" title="Plum"></div>
+              <div class="xdim-dot" data-theme="dusk" title="Dusk"></div>
+              <div class="xdim-dot" data-theme="ember" title="Ember"></div>
+              <div class="xdim-dot" data-theme="custom" title="Custom"></div>
+            </div>
+          </div>
+
+          <div class="xdim-custom-hue" id="xdimCustomHueSection">
+            <label>Custom Hue</label>
+            <div class="range-row">
+              <input type="range" id="xdimHueSlider" min="0" max="360" value="210">
+              <span class="range-val" id="xdimHueVal">210°</span>
+            </div>
+          </div>
+
+          <div class="xdim-preview" id="xdimPreview">
+            <div class="xdim-preview-bar">
+              <span class="dot"></span> Preview
+            </div>
+            <div class="xdim-preview-tweet">
+              The quick brown fox jumps over the lazy dog. This is how text looks with X Dim mode.
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="xdim-custom-hue" id="xdimCustomHueSection">
-        <label>Custom Hue</label>
-        <div class="range-row">
-          <input type="range" id="xdimHueSlider" min="0" max="360" value="210">
-          <span class="range-val" id="xdimHueVal">210°</span>
+      <div class="feat" data-feat="xunhook">
+        <div class="feat-head">
+          <span class="feat-icon">🧘</span>
+          <div class="feat-title">Unhook<div class="feat-sub">Hide trends, news and Explore</div></div>
+          <span class="status on" id="xunhookStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="xunhookToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <ul class="feat-list">
+            <li>Hide sidebar panels (Trends, News, Live on X)</li>
+            <li>Keep search bar at top of sidebar</li>
+            <li>Hide Explore in the left nav and the More menu</li>
+          </ul>
+          <div class="xdim-note">Toggle off if a page breaks.</div>
         </div>
       </div>
 
-      <div class="xdim-preview" id="xdimPreview">
-        <div class="xdim-preview-bar">
-          <span class="dot"></span> Preview
+      <div class="feat" data-feat="xreply">
+        <div class="feat-head">
+          <span class="feat-icon">💬</span>
+          <div class="feat-title">Reply audience<div class="feat-sub">New posts: replies from people you follow</div></div>
+          <span class="status on" id="xreplyStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="xreplyToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
         </div>
-        <div class="xdim-preview-tweet">
-          The quick brown fox jumps over the lazy dog. This is how text looks with X Dim mode.
+        <div class="feat-body">
+          <ul class="feat-list">
+            <li>Auto-opens the audience picker when you start a post</li>
+            <li>Selects "Accounts you follow and who they follow"</li>
+            <li>Skips if you've already set the audience</li>
+            <li>Manual changes in the picker are respected</li>
+          </ul>
         </div>
       </div>
 
-      <div class="xdim-note">
-        Applies a custom dim theme to X / Twitter.<br>
-        Choose a theme or set a custom hue for less eye strain.
-      </div>
-    </div>
-  </div>
+      <div class="feat-group">YouTube</div>
 
-  <!-- ═══ X Unhook Page ═══ -->
-  <div class="page" id="page-xunhook">
-    <div class="page-body">
-      <div class="unhook-big-toggle">
-        <div class="yticon" style="font-weight:800;font-family:-apple-system,sans-serif;">𝕏</div>
-        <label class="big-switch">
-          <input type="checkbox" id="xunhookToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="xunhookStatus">ON</div>
-      </div>
-
-      <div class="unhook-features">
-        <div class="unhook-feature"><span class="check">✓</span> Hide sidebar panels (Trends, News, Live on X)</div>
-        <div class="unhook-feature"><span class="check">✓</span> Keep search bar at top of sidebar</div>
-        <div class="unhook-feature"><span class="check">✓</span> Hide Explore tab in left nav</div>
-        <div class="unhook-feature"><span class="check">✓</span> Hide Explore in More overflow menu</div>
+      <div class="feat" data-feat="unhook">
+        <div class="feat-head">
+          <span class="feat-icon">📺</span>
+          <div class="feat-title">Unhook<div class="feat-sub">No feed, suggestions or Shorts</div></div>
+          <span class="status on" id="unhookStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="unhookToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="unhook-features" id="unhookFeatures">
+            <div class="unhook-feature clickable" data-feature="homepage"><span class="check">✓</span> Black homepage — no feed</div>
+            <div class="unhook-feature clickable" data-feature="sidebar"><span class="check">✓</span> No sidebar suggestions</div>
+            <div class="unhook-feature clickable" data-feature="endscreen"><span class="check">✓</span> No end screen overlays</div>
+            <div class="unhook-feature clickable" data-feature="shorts"><span class="check">✓</span> No Shorts shelves</div>
+            <div class="unhook-feature clickable" data-feature="wider"><span class="check">✓</span> Wider video player</div>
+          </div>
+          <div class="xdim-note">Click a feature to toggle it. Search still works — just no recommendations.</div>
+        </div>
       </div>
 
-      <div class="xdim-note" style="margin-top:10px">
-        Removes X / Twitter distractions.<br>
-        Toggle off if a page breaks.
-      </div>
-    </div>
-  </div>
+      <div class="feat-group">Photopea</div>
 
-  <!-- ═══ No Paywall Page ═══ -->
-  <div class="page" id="page-archive">
-    <div class="page-body">
-      <div class="unhook-big-toggle">
-        <div class="yticon">🗄</div>
-        <label class="big-switch">
-          <input type="checkbox" id="archiveToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="archiveStatus">ON</div>
+      <div class="feat" data-feat="photopea">
+        <div class="feat-head">
+          <span class="feat-icon">🫛</span>
+          <div class="feat-title">No ads<div class="feat-sub">Hide the ad column, full-width editor</div></div>
+          <span class="status on" id="photopeaStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="photopeaToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <ul class="feat-list">
+            <li>Hide the ad column on photopea.com</li>
+            <li>Editor expands to full window width</li>
+            <li>No "Ad blocking detected" nag panel</li>
+          </ul>
+          <div class="xdim-note">Open Photopea tabs reload when you toggle.</div>
+        </div>
       </div>
-
-      <div class="unhook-features">
-        <div class="unhook-feature"><span class="check">✓</span> Articles on these sites open on archive.is</div>
-        <div class="unhook-feature"><span class="check">✓</span> Homepages and section fronts are left alone</div>
-        <div class="unhook-feature"><span class="check">✓</span> Links clicked from archive.is open the original</div>
-      </div>
-
-      <textarea class="livecss-editor" id="archiveSites" style="min-height:160px;margin-top:10px" spellcheck="false" placeholder="nytimes.com&#10;wsj.com"></textarea>
-      <div class="xdim-note" id="archiveNote">One domain per line (subdomains included). Saved automatically.</div>
     </div>
   </div>
 
@@ -992,114 +1142,90 @@
     </div>
   </div>
 
-  <!-- ═══ Photopea No Ads Page ═══ -->
-  <div class="page" id="page-photopea">
+  <!-- ═══ Blocking Page: ads, cookie banners, paywalls ═══ -->
+  <div class="page" id="page-blocking">
     <div class="page-body">
-      <div class="unhook-big-toggle">
-        <div class="yticon">🫛</div>
-        <label class="big-switch">
-          <input type="checkbox" id="photopeaToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="photopeaStatus">ON</div>
+      <div class="feat" data-feat="adblock">
+        <div class="feat-head">
+          <span class="feat-icon">🛡</span>
+          <div class="feat-title">Ad Block<div class="feat-sub" id="adblockHost"></div></div>
+          <span class="status on" id="adblockStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="adblockToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="toggle-row">
+            <label>Pause on this site</label>
+            <label class="switch">
+              <input type="checkbox" id="adblockPause">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <ul class="feat-list">
+            <li>Blocks ad and tracker requests (EasyList + EasyPrivacy)</li>
+            <li>Hides the empty ad slots left behind</li>
+            <li>Blocked count shown on the extension icon</li>
+          </ul>
+          <div class="xdim-note">
+            Chrome does the blocking itself — no page traffic passes through the extension.
+            Pause a site if it breaks. Reload open tabs after switching off.
+          </div>
+          <div id="adblockExtras"></div>
+          <div class="xdim-note" id="adblockBuild"></div>
+        </div>
       </div>
 
-      <div class="unhook-features">
-        <div class="unhook-feature"><span class="check">✓</span> Hide the ad column on photopea.com</div>
-        <div class="unhook-feature"><span class="check">✓</span> Editor expands to full window width</div>
-        <div class="unhook-feature"><span class="check">✓</span> No "Ad blocking detected" nag panel</div>
+      <div class="feat" data-feat="nocookie">
+        <div class="feat-head">
+          <span class="feat-icon">🍪</span>
+          <div class="feat-title">Cookie banners<div class="feat-sub">Auto-dismiss consent popups</div></div>
+          <span class="status on" id="nocookieStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="nocookieToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="nocookie-stats">
+            Hides banners via CSS and auto-clicks accept buttons for common consent frameworks:
+            OneTrust, CookieBot, Didomi, Quantcast, GDPR plugins, and more.
+          </div>
+          <div class="xdim-note">Toggle off if a site breaks.</div>
+        </div>
       </div>
 
-      <div class="xdim-note" style="margin-top:10px">
-        Photopea sizes the editor for a 320px ad column; we tell it the window is 320px wider and hide the column.<br>
-        Open Photopea tabs reload when you toggle.
+      <div class="feat" data-feat="archive">
+        <div class="feat-head">
+          <span class="feat-icon">🗄</span>
+          <div class="feat-title">No paywall<div class="feat-sub">Open articles on archive.is</div></div>
+          <span class="status on" id="archiveStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="archiveToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <ul class="feat-list">
+            <li>Articles on these sites open on archive.is</li>
+            <li>Homepages and section fronts are left alone</li>
+            <li>Links clicked from archive.is open the original</li>
+          </ul>
+          <textarea class="livecss-editor" id="archiveSites" style="min-height:120px" spellcheck="false" placeholder="nytimes.com&#10;wsj.com"></textarea>
+          <div class="xdim-note" id="archiveNote">One domain per line (subdomains included). Saved automatically.</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ═══ X Reply Page ═══ -->
-  <div class="page" id="page-xreply">
+
+  <!-- ═══ Trackers Page ═══ -->
+  <div class="page" id="page-trackers">
     <div class="page-body">
-      <div class="unhook-big-toggle">
-        <div class="yticon" style="font-weight:800;font-family:-apple-system,sans-serif;">𝕏</div>
-        <label class="big-switch">
-          <input type="checkbox" id="xreplyToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="xreplyStatus">ON</div>
+      <div class="trk-head">
+        <div class="trk-summary" id="trkSummary"></div>
+        <button class="trk-reload" id="trkReload" title="Reload the page to apply changes">↻ Reload page</button>
       </div>
-
-      <div class="unhook-features">
-        <div class="unhook-feature"><span class="check">✓</span> Auto-opens the audience picker when you start a post</div>
-        <div class="unhook-feature"><span class="check">✓</span> Selects "Accounts you follow and who they follow"</div>
-        <div class="unhook-feature"><span class="check">✓</span> Skips if you've already set the audience</div>
-        <div class="unhook-feature"><span class="check">✓</span> Manual changes in the picker are respected</div>
-      </div>
-
-      <div class="xdim-note" style="margin-top:10px">
-        Tightens default reply audience on new tweets.<br>
-        Toggle off to leave the picker untouched.
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ Ad Block Page ═══ -->
-  <div class="page" id="page-adblock">
-    <div class="page-body">
-      <div class="unhook-big-toggle">
-        <div class="yticon">🛡</div>
-        <label class="big-switch">
-          <input type="checkbox" id="adblockToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="adblockStatus">ON</div>
-      </div>
-      <div class="dark-host" id="adblockHost"></div>
-
-      <div class="toggle-row">
-        <label>Pause on this site</label>
-        <label class="switch">
-          <input type="checkbox" id="adblockPause">
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="unhook-features">
-        <div class="unhook-feature"><span class="check">✓</span> Blocks ad and tracker requests (EasyList + EasyPrivacy)</div>
-        <div class="unhook-feature"><span class="check">✓</span> Hides the empty ad slots left behind</div>
-        <div class="unhook-feature"><span class="check">✓</span> Blocked count shown on the extension icon</div>
-      </div>
-
-      <div class="xdim-note">
-        Chrome does the blocking itself — no page traffic passes through the extension.<br>
-        Pause a site if it breaks. Reload open tabs after switching off.
-      </div>
-      <div class="xdim-note" id="adblockBuild" style="margin-top:10px"></div>
-    </div>
-  </div>
-
-  <!-- ═══ Cookie Consent (GDPR) Page ═══ -->
-  <div class="page" id="page-nocookie">
-    <div class="page-body">
-      <div class="nocookie-big-toggle">
-        <div class="ncicon">🚫🍪</div>
-        <label class="big-switch">
-          <input type="checkbox" id="nocookieToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="nocookieStatus">ON</div>
-      </div>
-
-      <div class="nocookie-stats">
-        <b>Auto-dismisses cookie consent popups</b><br>
-        Hides banners via CSS and auto-clicks accept buttons for common consent frameworks:
-        OneTrust, CookieBot, Didomi, Quantcast, GDPR plugins, and more.
-      </div>
-
-      <div class="xdim-note">
-        Works on most sites automatically.<br>
-        Toggle off if a site breaks.
-      </div>
+      <div class="livecss-host" id="trkHost"></div>
+      <div id="trkList"></div>
+      <div class="trk-group">Block everywhere</div>
+      <div id="trkCategories"></div>
+      <div class="xdim-note" id="trkNote" style="margin-top:10px"></div>
     </div>
   </div>
 
@@ -1115,53 +1241,37 @@
     </div>
   </div>
 
-  <!-- ═══ YouTube Unhook Page ═══ -->
-  <div class="page" id="page-unhook">
+  <!-- ═══ Toggles Page: JS per site, JSON formatter ═══ -->
+  <div class="page" id="page-toggles">
     <div class="page-body">
-      <div class="unhook-big-toggle">
-        <div class="yticon">📺</div>
-        <label class="big-switch">
-          <input type="checkbox" id="unhookToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="unhookStatus">ON</div>
+      <div class="feat" data-feat="jstoggle">
+        <div class="feat-head">
+          <span class="feat-icon">⚡</span>
+          <div class="feat-title">JavaScript<div class="feat-sub"><span class="indicator on" id="jsIndicator"></span> <span id="jsHostLabel">Loading...</span></div></div>
+          <span class="status on" id="jsStatus">ENABLED</span>
+          <label class="switch"><input type="checkbox" id="jsToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="xdim-note">Disable JavaScript for the current site. The page reloads when toggled.</div>
+        </div>
       </div>
 
-      <div class="unhook-features" id="unhookFeatures">
-        <div class="unhook-feature clickable" data-feature="homepage"><span class="check">✓</span> Black homepage — no feed</div>
-        <div class="unhook-feature clickable" data-feature="sidebar"><span class="check">✓</span> No sidebar suggestions</div>
-        <div class="unhook-feature clickable" data-feature="endscreen"><span class="check">✓</span> No end screen overlays</div>
-        <div class="unhook-feature clickable" data-feature="shorts"><span class="check">✓</span> No Shorts shelves</div>
-        <div class="unhook-feature clickable" data-feature="wider"><span class="check">✓</span> Wider video player</div>
-      </div>
-
-      <div class="xdim-note" style="margin-top:10px">
-        Click a feature to toggle it on/off.<br>
-        Search still works — just no recommendations.
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ JS Toggle Page ═══ -->
-  <div class="page" id="page-jstoggle">
-    <div class="page-body">
-      <div class="js-big-toggle">
-        <div class="jsicon">JS</div>
-        <label class="big-switch">
-          <input type="checkbox" id="jsToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="jsStatus">ENABLED</div>
-      </div>
-
-      <div class="js-status-row">
-        <div class="indicator on" id="jsIndicator"></div>
-        <span class="label" id="jsHostLabel">Loading...</span>
-      </div>
-
-      <div class="js-note">
-        Disable JavaScript for the current site.<br>
-        The page will reload when toggled.
+      <div class="feat" data-feat="jsonformat">
+        <div class="feat-head">
+          <span class="feat-icon">{}</span>
+          <div class="feat-title">JSON formatter<div class="feat-sub">Pretty-print JSON responses</div></div>
+          <span class="status on" id="jsonformatStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="jsonformatToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="nocookie-stats">
+            Detects pure JSON pages and displays them with syntax highlighting,
+            collapsible sections, and a dark theme. Copy or view raw with one click.
+          </div>
+          <div class="xdim-note">Regular HTML pages are never affected.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1267,31 +1377,6 @@
       <div class="xdim-note" style="margin-top:10px">
         Pops the largest video on the current tab<br>
         into a floating window. Click again to exit.
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ JSON Formatter Page ═══ -->
-  <div class="page" id="page-jsonformat">
-    <div class="page-body">
-      <div class="nocookie-big-toggle">
-        <div class="ncicon">{&thinsp;}</div>
-        <label class="big-switch">
-          <input type="checkbox" id="jsonformatToggle" checked>
-          <span class="big-slider"></span>
-        </label>
-        <div class="status on" id="jsonformatStatus">ON</div>
-      </div>
-
-      <div class="nocookie-stats">
-        <b>Auto-formats JSON responses</b><br>
-        Detects pure JSON pages and displays them with syntax highlighting,
-        collapsible sections, and a dark theme. Copy or view raw with one click.
-      </div>
-
-      <div class="xdim-note">
-        Only triggers on actual JSON responses.<br>
-        Regular HTML pages are never affected.
       </div>
     </div>
   </div>

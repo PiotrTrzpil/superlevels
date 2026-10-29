@@ -60,7 +60,14 @@ Hides the 320px ad column on [photopea.com](https://www.photopea.com) and expand
 ### 🛡 Ad Block
 Blocks ad and tracker requests and hides the empty ad slots they leave behind, like [uBlock Origin Lite](https://github.com/uBlockOrigin/uBOL-home). [EasyList](https://easylist.to) and EasyPrivacy are compiled into Chrome's built-in `declarativeNetRequest` rules (about 13,000 rules covering roughly 90,000 domains), so Chrome does the blocking itself and no page traffic passes through the extension. The icon badge shows how many requests were blocked on the current page. Pause it per site if something breaks. Not included: YouTube video ads, popup blocking, and scriptlet/procedural filters.
 
+**Extra lists**, each off until you switch it on: cookie notices, social widgets (like/share buttons, embedded feeds), newsletter pop-ups, notification prompts, and other annoyances (chat widgets, "open in app" banners). These are [Fanboy's lists](https://easylist.to) from the EasyList authors. With every list on, it comes to about 17,000 rules, inside Chrome's 30,000-rule budget for dynamic rules.
+
 **Optional, needs a one-time build.** The compiled lists aren't in the repo. Until you build them, Ad Block stays off and everything else works normally. See [Install](#install), step 7.
+
+### 👁 Trackers
+Shows which third parties the current page talks to: each tracker's name, company and category (advertising, analytics, social media…), how many requests it made, and whether they were blocked, like the old Ghostery. Block a single tracker, an unknown host, or a whole category (advertising, analytics, social, chat widgets…) everywhere with one switch. Categories that break sites when blocked (CDNs, video players, "essential") can only be blocked one tracker at a time. Requests are only observed, and the log stays in your browser.
+
+Names and categories come from the [WhoTracks.Me](https://whotracks.me) database (via [AdGuard companiesdb](https://github.com/AdguardTeam/companiesdb)). It's optional too: without it, the panel lists bare hostnames. Build it with `node trackers/build.mjs` (see [Install](#install), step 7).
 
 ### 🗄 No Paywall
 Opens paywalled news articles straight on [archive.is](https://archive.is) — e.g. an nytimes.com article goes to `archive.is/https://www.nytimes.com/...`. Only article URLs redirect (homepages and section fronts don't), tracking params are stripped so existing snapshots match, and links clicked from an archive page open the original. The site list (NYT, WSJ, FT, Bloomberg, Economist, plus Dutch, German, French, Italian, Spanish and Nordic papers like NRC, Volkskrant, Spiegel, Zeit, Le Monde, Corriere, El País) is editable in the popup.
@@ -79,6 +86,22 @@ Adds a "View Image" button back to Google Images, linking directly to the full-s
 
 ### {} JSON Formatter
 Auto-detects pure JSON response pages and formats them with syntax highlighting, collapsible sections, and a dark theme. Copy or view raw with one click. Never triggers on regular HTML pages.
+
+### 📥 Bookmark Inbox
+Files the bookmarks that pile up in one folder (Mobile bookmarks by default, so everything saved on your phone) into the folders where they belong. A bookmark gets a suggested folder only when the evidence is clear: it's already bookmarked there, or most of that site's bookmarks live there. Accept, pick another folder (typing a new path creates it), or delete. Decisions stay pending until you apply them as one batch, which you can undo from the popup.
+
+### 🪦 Dead Links
+Checks every bookmark while the tab is open and finds the ones that are really gone: a 404 or 410, or a site that can't be reached at all. A bookmark is only called dead after it fails on two scans at least 20 hours apart, so a brief outage never costs you a bookmark. Login walls, 403s, server errors and timeouts go under "Check yourself", and local-network addresses are skipped. "Remove selected" deletes the checked ones in one batch you can undo from the popup.
+
+### 🧹 Tidy Bookmarks
+Finds three kinds of clutter:
+- the same page saved more than once (http/https, `www.`, trailing slashes and tracking parameters don't matter);
+- URLs carrying tracking parameters such as `utm_*` or `fbclid`;
+- folders with no bookmarks in them.
+
+Every change is previewed before anything happens. For duplicates, the copy in the most specific folder is kept, and you can pick another. If the kept copy has no real title, it takes one from a removed copy. Each section is applied as one batch you can undo from the popup.
+
+All three open from the popup's **🔖 Bookmarks** page.
 
 ### 🔖 Bookmark Bridge
 Lets programs on your computer reorganize your bookmarks through Chrome's own bookmarks API while Chrome runs, so Chrome Sync uploads the changes the way it uploads edits you make by hand. (Editing Chrome's `Bookmarks` file instead doesn't sync reliably: Sync can undo the edits or bring deleted bookmarks back.) Every batch of changes is listed in the popup and can be undone from there. Off by default. While off, no program runs and nothing can change your bookmarks.
@@ -120,18 +143,27 @@ Messages to the extension are limited to 1 MB, so split large changes into sever
    ```sh
    node adblock/build.mjs
    ```
-   This downloads EasyList and EasyPrivacy and compiles them into `adblock/`. It needs no `pnpm install`. Run it again whenever you want fresher lists.
+   This downloads EasyList, EasyPrivacy and the optional extra lists and compiles them into `adblock/`. It needs no `pnpm install`. Run it again whenever you want fresher lists. *For tracker names in the 👁 Trackers panel*, also run `node trackers/build.mjs`.
 8. The 🚀 icon appears in your toolbar — you're done!
 
 ## Development
 
-The only build step is the optional Ad Block lists. Their outputs (`adblock/*.json`, `adblock/generic.css`) are gitignored.
+The only build steps are the optional Ad Block lists and tracker database. Their outputs (`adblock/*.json`, `adblock/*.css`, `trackers/*.json`) are gitignored.
 
-**Build the ad block lists.** This writes `adblock/rules.json`, `adblock/generic.css`, `adblock/cosmetic.json` and `adblock/meta.json`:
+**Build the ad block lists.** This writes `adblock/rules.json`, `adblock/generic.css`, `adblock/cosmetic.json`, the same three as `adblock/extra-<list>.*` for each extra list, and `adblock/meta.json`:
 
 ```sh
-pnpm build:adblock                                    # download fresh lists
-node adblock/build.mjs easylist.txt easyprivacy.txt   # or use local copies
+pnpm build:adblock                                    # download fresh lists, extras included
+node adblock/build.mjs easylist.txt easyprivacy.txt   # or core lists only, from local copies
+```
+
+Every list can be on at once, so the build also fails if all of them together would exceed the 29,000-rule budget. The tracker panel's block rules use dynamic rule ids 100,000–109,999. Ad Block owns the ids below that.
+
+**Build the tracker database.** This writes `trackers/db.json`:
+
+```sh
+pnpm build:trackers                                   # download from AdGuard companiesdb
+node trackers/build.mjs trackers.json companies.json  # or use local copies
 ```
 
 The build fails and writes nothing if a download fails, if any rule wouldn't be valid for Chrome, or if the lists look too small. It writes all files at once, so an interrupted build can't leave a mix of old and new. `meta.json` marks a finished build, and the extension turns Ad Block on only when that file exists. The rules are loaded as dynamic `declarativeNetRequest` rules, because a static ruleset in the manifest whose file is missing would stop the whole extension from loading. Then reload the extension in `chrome://extensions` and run the tests.
@@ -152,10 +184,21 @@ The tests use Playwright's Chromium because branded Google Chrome ignores `--loa
 - **No data collection.** Everything stays local in `chrome.storage.local`.
 - **No analytics, no tracking, no phone-home.**
 - The Bookmark Bridge is off by default. When on, it talks only to a local program you installed (Chrome native messaging), never to the network.
-- Ad Block's filter lists are downloaded only when you run the build yourself, never by the extension at runtime.
+- Ad Block's filter lists and the tracker database are downloaded only when you run the builds yourself, never by the extension at runtime.
+- The 👁 Trackers panel logs which hosts each tab contacts, in memory and session storage only. The log is cleared when the tab closes.
 - The only external network request is the Music Recognizer, which sends a short audio clip to ACRCloud — and only when you explicitly click "Listen" and provide your own API keys.
 - All source code is right here. Read it, audit it, fork it.
 
 ## License
 
-MIT
+MIT, for the extension's code.
+
+The optional data the builds download isn't in this repo and keeps its own licence:
+
+| Data | Used for | Licence |
+|---|---|---|
+| [EasyList, EasyPrivacy](https://easylist.to) | Ad Block | GPL v3 or [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), by the EasyList authors |
+| [Fanboy's lists](https://easylist.to) (cookie, social, newsletter, notifications, annoyances) | Ad Block extra lists | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), by the EasyList authors |
+| [AdGuard companiesdb](https://github.com/AdguardTeam/companiesdb), from [WhoTracks.Me](https://whotracks.me) | 👁 Trackers names and categories | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (WhoTracks.Me data: CC BY 4.0) |
+
+All of these allow commercial use with attribution. Ghostery's TrackerDB, DuckDuckGo's Tracker Radar and Disconnect's list were left out on purpose: they're CC BY-NC-SA, which forbids commercial use.

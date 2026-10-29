@@ -2,38 +2,47 @@
 //  Navigation
 // ═══════════════════════════════════
 function switchToPage(page) {
-  document.querySelectorAll(".nav button").forEach((b) => b.classList.remove("active"));
-  document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
-  const btn = document.querySelector(`.nav button[data-page="${page}"]`);
+  const btn = document.querySelector(`.subnav button[data-page="${page}"]`);
   if (!btn) return;
+  const subnav = btn.closest(".subnav");
+  // Other subnavs keep their active button, so a group reopens on its last page
+  document.querySelectorAll(".nav button, .subnav, .page").forEach((el) => el.classList.remove("active"));
+  subnav.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+  document.querySelector(`.nav button[data-group="${subnav.dataset.group}"]`).classList.add("active");
+  subnav.classList.add("active");
   btn.classList.add("active");
   document.getElementById("page-" + page).classList.add("active");
   // Defer the data-loading work so the page swap paints first
-  const load = () => {
-    if (page === "cookies") loadCookies();
-    else if (page === "redirects") loadRedirects();
-    else if (page === "darkmode") loadDarkMode();
-    else if (page === "xdim") loadXDim();
-    else if (page === "jstoggle") loadJsToggle();
-    else if (page === "adblock") loadAdblock();
-    else if (page === "nocookie") loadNoCookie();
-    else if (page === "livecss") loadLiveCSS();
-    else if (page === "unhook") loadUnhook();
-    else if (page === "xunhook") loadXUnhook();
-    else if (page === "xreply") loadXReply();
-    else if (page === "photopea") loadPhotopea();
-    else if (page === "archive") loadArchive();
-    else if (page === "bookmarks") loadBookmarkBridge();
-    else if (page === "jsonformat") loadJsonFormat();
-    else if (page === "summarize") loadSummarize();
-    else if (page === "music") { loadMusicHistory(); loadAcrFields(); }
-  };
+  const load = () => PAGE_LOADERS[page]?.forEach((fn) => fn());
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(load);
   else setTimeout(load, 0);
   chrome.storage.local.set({ last_tab: page });
 }
 
+// Called when a page is shown; function declarations below, so hoisted
+const PAGE_LOADERS = {
+  cookies: [loadCookies],
+  redirects: [loadRedirects],
+  darkmode: [loadDarkMode],
+  livecss: [loadLiveCSS],
+  sites: [loadXDim, loadXUnhook, loadXReply, loadUnhook, loadPhotopea],
+  blocking: [loadAdblock, loadNoCookie, loadArchive],
+  trackers: [loadTrackers],
+  toggles: [loadJsToggle, loadJsonFormat],
+  bookmarks: [loadBookmarkBridge],
+  summarize: [loadSummarize],
+  music: [loadMusicHistory, loadAcrFields],
+};
+
 document.querySelectorAll(".nav button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const subnav = document.querySelector(`.subnav[data-group="${btn.dataset.group}"]`);
+    const page = subnav.querySelector("button.active") ?? subnav.querySelector("button");
+    switchToPage(page.dataset.page);
+  });
+});
+
+document.querySelectorAll(".subnav button").forEach((btn) => {
   btn.addEventListener("click", () => {
     switchToPage(btn.dataset.page);
     // Clicking the PiP tab toggles PiP right away (needs the user gesture,
@@ -42,11 +51,37 @@ document.querySelectorAll(".nav button").forEach((btn) => {
   });
 });
 
-// Restore last open tab — deferred so the default page paints first
-requestAnimationFrame(() => {
-  chrome.storage.local.get(["last_tab"], (data) => {
-    if (data.last_tab) switchToPage(data.last_tab);
+// Feature rows: clicking the row (not its switch) shows its details;
+// which rows are open is remembered across popup opens
+const feats = document.querySelectorAll(".feat");
+feats.forEach((feat) => {
+  feat.querySelector(".feat-head").addEventListener("click", (e) => {
+    if (e.target.closest(".switch")) return;
+    feat.classList.toggle("open");
+    const open = [...feats].filter((f) => f.classList.contains("open")).map((f) => f.dataset.feat);
+    chrome.storage.local.set({ open_feats: open });
   });
+});
+chrome.storage.local.get(["open_feats"], ({ open_feats = [] }) => {
+  feats.forEach((f) => f.classList.toggle("open", open_feats.includes(f.dataset.feat)));
+});
+
+// Sites whose fixes live on the Sites page; the popup opens there on them
+const SITE_HOSTS = /(^|\.)(x\.com|twitter\.com|youtube\.com|photopea\.com)$/;
+
+function isFixedSite(url) {
+  try { return SITE_HOSTS.test(new URL(url).hostname); } catch { return false; }
+}
+
+// Open on the Sites page on a fixed site, else the last open tab — deferred
+// so the default page paints first
+requestAnimationFrame(async () => {
+  const [[tab], data] = await Promise.all([
+    chrome.tabs.query({ active: true, currentWindow: true }),
+    chrome.storage.local.get(["last_tab"]),
+  ]);
+  if (isFixedSite(tab?.url)) switchToPage("sites");
+  else if (data.last_tab) switchToPage(data.last_tab);
 });
 
 // ═══════════════════════════════════
@@ -645,6 +680,7 @@ const adblockStatus = document.getElementById("adblockStatus");
 const adblockHostEl = document.getElementById("adblockHost");
 const adblockPause = document.getElementById("adblockPause");
 const adblockBuild = document.getElementById("adblockBuild");
+const adblockExtras = document.getElementById("adblockExtras");
 
 let adblockHost = "";
 
@@ -655,10 +691,10 @@ async function loadAdblock() {
     const url = new URL(tab?.url);
     if (/^https?:$/.test(url.protocol)) adblockHost = url.hostname.replace(/^www\./, "");
   } catch {}
-  adblockHostEl.textContent = adblockHost ? `Current site: ${adblockHost}` : "";
+  adblockHostEl.textContent = adblockHost ? `Current site: ${adblockHost}` : "Blocks ads and trackers";
 
   const [data, meta] = await Promise.all([
-    chrome.storage.local.get(["adblock_enabled", "adblock_paused"]),
+    chrome.storage.local.get(["adblock_enabled", "adblock_paused", "adblock_extras"]),
     // Written by adblock/build.mjs; missing until the lists are built
     fetch("adblock/meta.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
@@ -671,10 +707,44 @@ async function loadAdblock() {
   adblockBuild.textContent = meta
     ? `Lists built ${new Date(meta.builtAt).toLocaleDateString()}: ${meta.rules.toLocaleString()} rules.`
     : "Not set up. Ad Block is optional: build the filter lists with pnpm build:adblock in the extension folder, then reload the extension.";
+  renderAdblockExtras(meta?.extras || [], data.adblock_extras || []);
   if (meta) updateAdblockUI(enabled);
   else {
     adblockStatus.textContent = "NOT BUILT";
     adblockStatus.className = "status off";
+  }
+}
+
+// One switch per extra list the build produced (meta.extras); all off by default
+function renderAdblockExtras(extras, enabledIds) {
+  adblockExtras.replaceChildren();
+  if (!extras.length) return;
+  const heading = document.createElement("h2");
+  heading.textContent = "Extra lists";
+  heading.style.marginTop = "12px";
+  adblockExtras.append(heading);
+  for (const extra of extras) {
+    const row = document.createElement("div");
+    row.className = "toggle-row";
+    const label = document.createElement("label");
+    label.textContent = extra.title;
+    label.title = `${extra.rules.toLocaleString()} rules, ${extra.selectors.toLocaleString()} hiding selectors`;
+    const sw = document.createElement("label");
+    sw.className = "switch";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.dataset.extra = extra.id;
+    input.checked = enabledIds.includes(extra.id);
+    input.addEventListener("change", async () => {
+      const { adblock_extras = [] } = await chrome.storage.local.get(["adblock_extras"]);
+      const rest = adblock_extras.filter((id) => id !== extra.id);
+      await chrome.storage.local.set({ adblock_extras: input.checked ? [...rest, extra.id] : rest });
+    });
+    const slider = document.createElement("span");
+    slider.className = "slider";
+    sw.append(input, slider);
+    row.append(label, sw);
+    adblockExtras.append(row);
   }
 }
 
@@ -699,6 +769,145 @@ adblockPause.addEventListener("change", async () => {
   await chrome.runtime.sendMessage({ type: "adblockSync" });
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab) chrome.tabs.reload(tab.id);
+});
+
+// ═══════════════════════════════════
+//  Trackers
+// ═══════════════════════════════════
+const TRACKER_CATEGORIES = {
+  advertising: "Advertising", site_analytics: "Analytics", social_media: "Social media",
+  customer_interaction: "Chat & support widgets", pornvertising: "Adult advertising",
+  mobile_analytics: "Mobile analytics", telemetry: "Telemetry", consent: "Consent managers",
+  audio_video_player: "Video players", comments: "Comments", essential: "Essential",
+  cdn: "CDNs", hosting: "Hosting", email: "Email", extensions: "Extensions",
+  misc: "Misc", unknown: "Unknown",
+};
+// Offered as "block everywhere" switches. The rest (CDNs, video players,
+// essential, hosting…) break too many sites to block wholesale.
+const TRACKER_BLOCKABLE = ["advertising", "site_analytics", "social_media", "customer_interaction", "pornvertising", "mobile_analytics", "telemetry"];
+// Storage key for each kind of block switch
+const TRACKER_KEYS = { tracker: "trackers_blocked", category: "trackers_blocked_categories", host: "trackers_blocked_hosts" };
+
+const trkSummary = document.getElementById("trkSummary");
+const trkHostEl = document.getElementById("trkHost");
+const trkList = document.getElementById("trkList");
+const trkCategories = document.getElementById("trkCategories");
+const trkNote = document.getElementById("trkNote");
+const trkReload = document.getElementById("trkReload");
+
+let trkTabId = null;
+
+async function loadTrackers() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  trkTabId = tab?.id ?? null;
+  const data = trkTabId === null ? null : await chrome.runtime.sendMessage({ type: "trackersForTab", tabId: trkTabId });
+  renderTrackers(data);
+}
+
+function trkEl(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+
+// A row's block switch: checked = blocked by you. kind/value pick the storage list.
+function trkSwitch(kind, value, checked, { disabled = false, title = "" } = {}) {
+  const label = trkEl("label", "switch");
+  const input = trkEl("input");
+  input.type = "checkbox";
+  input.checked = checked;
+  input.disabled = disabled;
+  label.title = title || (checked ? "Blocked everywhere — click to allow" : "Block everywhere");
+  input.addEventListener("change", async () => {
+    const key = TRACKER_KEYS[kind];
+    const { [key]: list = [] } = await chrome.storage.local.get([key]);
+    const rest = list.filter((v) => v !== value);
+    await chrome.storage.local.set({ [key]: input.checked ? [...rest, value] : rest });
+    await chrome.runtime.sendMessage({ type: "trackersSync" });
+    loadTrackers();
+  });
+  label.append(input, trkEl("span", "slider"));
+  return label;
+}
+
+function trkChip(requests, blocked) {
+  if (blocked && blocked >= requests) return trkEl("span", "trk-chip blocked", "blocked");
+  if (blocked) return trkEl("span", "trk-chip partly", `${blocked}/${requests} blocked`);
+  return trkEl("span", "trk-chip", "loaded");
+}
+
+function renderTrackers(data) {
+  trkList.replaceChildren();
+  trkCategories.replaceChildren();
+  const settings = data?.settings ?? { trackers: [], categories: [], hosts: [] };
+
+  if (!data?.page) {
+    trkSummary.textContent = "Trackers";
+    trkHostEl.textContent = "";
+    trkList.append(trkEl("div", "trk-empty", "No data for this tab yet. Reload the page to see its trackers."));
+  } else {
+    const blocked = [...data.trackers, ...data.others].filter((t) => t.blocked).length;
+    const total = data.trackers.length + data.others.length;
+    trkSummary.textContent = `${total} third ${total === 1 ? "party" : "parties"} · ${blocked} blocked`;
+    trkHostEl.textContent = `On ${data.page}`;
+    if (!total) trkList.append(trkEl("div", "trk-empty", "No third-party requests on this page."));
+
+    // Known trackers, grouped by category (blockable categories first)
+    const order = Object.keys(TRACKER_CATEGORIES);
+    const groups = Object.groupBy(data.trackers, (t) => t.category);
+    for (const category of Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b))) {
+      trkList.append(trkEl("div", "trk-group", TRACKER_CATEGORIES[category] ?? category));
+      const byCategory = settings.categories.includes(category);
+      for (const t of groups[category]) {
+        const row = trkEl("div", "trk-row");
+        const name = trkEl("span", "trk-name", t.name);
+        name.title = t.hosts.join("\n");
+        if (t.company && t.company !== t.name) name.append(trkEl("span", "trk-company", t.company));
+        row.append(name, trkEl("span", "trk-count", t.requests), trkChip(t.requests, t.blocked),
+          trkSwitch("tracker", t.id, byCategory || settings.trackers.includes(t.id),
+            byCategory ? { disabled: true, title: "Blocked with its whole category below" } : {}));
+        trkList.append(row);
+      }
+    }
+
+    if (data.others.length) {
+      trkList.append(trkEl("div", "trk-group", data.trackers.length ? "Other third parties" : "Third parties"));
+      for (const o of data.others) {
+        const row = trkEl("div", "trk-row");
+        row.append(trkEl("span", "trk-name", o.host), trkEl("span", "trk-count", o.requests),
+          trkChip(o.requests, o.blocked), trkSwitch("host", o.host, settings.hosts.includes(o.host)));
+        trkList.append(row);
+      }
+    }
+  }
+
+  for (const category of TRACKER_BLOCKABLE) {
+    const row = trkEl("div", "trk-row");
+    row.append(trkEl("span", "trk-name", TRACKER_CATEGORIES[category]),
+      trkSwitch("category", category, settings.categories.includes(category), { disabled: !data?.source }));
+    trkCategories.append(row);
+  }
+
+  trkNote.replaceChildren();
+  if (data?.source) {
+    const link = (text, href) => Object.assign(trkEl("a", "", text), { href, target: "_blank", style: "color:#888" });
+    trkNote.append("Tracker data: ", link("WhoTracks.Me", "https://whotracks.me"), " via ",
+      link("AdGuard companiesdb", "https://github.com/AdguardTeam/companiesdb"), " (CC BY-SA 4.0). Blocks apply after a reload.");
+  } else {
+    trkNote.textContent = "Names and categories need the tracker database (optional): run pnpm build:trackers in the extension folder, then reload the extension. Blocks apply after a reload.";
+  }
+}
+
+trkReload.addEventListener("click", () => {
+  if (trkTabId !== null) chrome.tabs.reload(trkTabId);
+});
+
+// Refresh the list once the reloaded page has finished loading
+chrome.tabs.onUpdated.addListener((tabId, info) => {
+  if (tabId === trkTabId && info.status === "complete" && document.getElementById("page-trackers").classList.contains("active")) {
+    loadTrackers();
+  }
 });
 
 // ═══════════════════════════════════

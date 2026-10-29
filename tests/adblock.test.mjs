@@ -149,6 +149,59 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
     }
   });
 
+  test("extra lists switch on and off", async (t) => {
+    const meta = JSON.parse(await readFile(join(EXT_DIR, "adblock/meta.json"), "utf8"));
+    if (!meta.extras?.length) return t.skip("built without extra lists");
+    const ids = meta.extras.map((e) => e.id);
+    const ruleCount = () => ext.worker.evaluate(async () =>
+      (await chrome.declarativeNetRequest.getDynamicRules()).filter((r) => r.id > 1 && r.id < 100_000).length);
+
+    // A merged-domain rule and a plain id/class selector from each list
+    const samples = await Promise.all(ids.map(async (id) => {
+      const rules = JSON.parse(await readFile(join(EXT_DIR, `adblock/extra-${id}.rules.json`), "utf8"));
+      const css = await readFile(join(EXT_DIR, `adblock/extra-${id}.css`), "utf8");
+      const candidates = rules.find((r) => r.condition.requestDomains)?.condition.requestDomains.slice(0, 20) ?? [];
+      const selector = css.match(/^([#.][A-Za-z][\w-]*)\{/m)?.[1];
+      return { id, candidates, selector };
+    }));
+    const matches = (domains) => ext.worker.evaluate(async (domains) => Promise.all(domains.map(async (d) =>
+      (await chrome.declarativeNetRequest.testMatchOutcome({ url: `https://${d}/x.js`, type: "script", initiator: "https://example.org" })).matchedRules.length > 0)), domains);
+    const hides = async (selectors) => {
+      const page = await ext.context.newPage();
+      await page.goto("https://news.example.org/article", { waitUntil: "load" });
+      const hidden = await page.evaluate((sels) => sels.map((s) => {
+        const el = document.createElement("div");
+        if (s.startsWith("#")) el.id = s.slice(1); else el.className = s.slice(1);
+        document.body.append(el);
+        return getComputedStyle(el).display === "none";
+      }), selectors);
+      await page.close();
+      return hidden;
+    };
+    // Lists overlap (some extra-list domains are in EasyList too), so per
+    // list take a domain only that list blocks: unmatched while extras are off
+    const domains = [];
+    for (const { candidates } of samples) {
+      const matched = await matches(candidates);
+      const own = candidates.find((d, i) => !matched[i]);
+      if (own) domains.push(own);
+    }
+    assert.ok(domains.length >= 3, `only ${domains.length} list-specific sample domains`);
+    const selectors = samples.filter((s) => s.selector).map((s) => s.selector);
+
+    const coreCount = await ruleCount();
+    await setSettings({ adblock_extras: ids });
+    try {
+      assert.equal(await ruleCount(), coreCount + meta.extras.reduce((n, e) => n + e.rules, 0));
+      assert.deepEqual(await matches(domains), domains.map(() => true));
+      assert.deepEqual(await hides(selectors), selectors.map(() => true));
+    } finally {
+      await setSettings({ adblock_extras: [] });
+    }
+    assert.equal(await ruleCount(), coreCount);
+    assert.deepEqual(await hides(selectors), selectors.map(() => false));
+  });
+
   test("popup Ads page renders", async () => {
     const page = await ext.context.newPage();
     const errors = [];
@@ -156,8 +209,9 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
     await page.goto(`chrome-extension://${ext.extensionId}/popup.html`);
     await page.waitForLoadState("load");
     await page.waitForTimeout(300); // popup restores the last-open page on load
-    await page.click('.nav button[data-page="adblock"]');
-    await waitFor(() => page.evaluate(() => document.getElementById("page-adblock").classList.contains("active")));
+    await page.click('.nav button[data-group="privacy"]');
+    await page.click('.subnav button[data-page="blocking"]');
+    await waitFor(() => page.evaluate(() => document.getElementById("page-blocking").classList.contains("active")));
     assert.equal(await page.textContent("#adblockStatus"), "ON");
     assert.equal(await page.isChecked("#adblockToggle"), true);
     assert.deepEqual(errors, []);

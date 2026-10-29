@@ -1,4 +1,4 @@
-importScripts("bookmarkbridge.js");
+importScripts("bookmarkbridge.js", "trackers.js");
 
 const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // 3 days
 const CHECK_INTERVAL_MIN = 1;
@@ -584,30 +584,54 @@ function getAdblockMeta() {
   return adblockMeta;
 }
 
-let adblockCosmetic = null;
-function getAdblockCosmetic() {
-  adblockCosmetic ??= fetch(chrome.runtime.getURL("adblock/cosmetic.json"))
-    .then((r) => r.json())
-    .then((c) => ({ ...c, generichide: new Set(c.generichide), elemhide: new Set(c.elemhide) }));
-  return adblockCosmetic;
+// Output file of the core lists, or of an extra list ("cookies", …)
+const adblockFile = (extra, kind) => `adblock/${extra ? `extra-${extra}.` : ""}${kind}`;
+const fetchJson = (path) => fetch(chrome.runtime.getURL(path)).then((r) => r.json());
+
+// Cosmetic rules of the core lists merged with the enabled extras, cached
+// per combination
+let adblockCosmetic = { key: null, value: null };
+function getAdblockCosmetic(extras) {
+  const key = extras.join(",");
+  if (adblockCosmetic.key !== key) {
+    const value = Promise.all([null, ...extras].map((e) => fetchJson(adblockFile(e, "cosmetic.json")))).then((lists) => {
+      const merged = { excepted: [], specific: {}, exceptions: {}, generichide: new Set(), elemhide: new Set() };
+      for (const c of lists) {
+        merged.excepted.push(...c.excepted);
+        for (const field of ["specific", "exceptions"]) {
+          for (const [host, sels] of Object.entries(c[field])) (merged[field][host] ??= []).push(...sels);
+        }
+        c.generichide.forEach((h) => merged.generichide.add(h));
+        c.elemhide.forEach((h) => merged.elemhide.add(h));
+      }
+      return merged;
+    });
+    adblockCosmetic = { key, value };
+  }
+  return adblockCosmetic.value;
 }
 
 async function getAdblockSettings() {
   const [d, meta] = await Promise.all([
-    chrome.storage.local.get(["adblock_enabled", "adblock_paused"]),
+    chrome.storage.local.get(["adblock_enabled", "adblock_paused", "adblock_extras"]),
     getAdblockMeta(),
   ]);
-  return { enabled: d.adblock_enabled !== false && !!meta, paused: d.adblock_paused || [], meta };
+  // Only extras this build has (a list may have been dropped since)
+  const built = new Set((meta?.extras || []).map((e) => e.id));
+  const extras = (d.adblock_extras || []).filter((id) => built.has(id)).sort();
+  return { enabled: d.adblock_enabled !== false && !!meta, paused: d.adblock_paused || [], meta, extras };
 }
 
 // Dynamic rules persist across worker restarts and extension reloads, so
-// they're only replaced when a different build is wanted (null: none)
-async function loadAdblockRules(version) {
+// they're only replaced when a different build or set of lists is wanted
+// (null: none)
+async function loadAdblockRules(version, extras) {
   const dnr = chrome.declarativeNetRequest;
+  const wanted = version && [version, ...extras].join(":");
   const { adblock_rules_version = null } = await chrome.storage.local.get(["adblock_rules_version"]);
-  if (adblock_rules_version === version) return;
-  const rules = version
-    ? await fetch(chrome.runtime.getURL("adblock/rules.json")).then((r) => r.json())
+  if (adblock_rules_version === wanted) return;
+  const rules = wanted
+    ? (await Promise.all([null, ...extras].map((e) => fetchJson(adblockFile(e, "rules.json"))))).flat()
     : [];
   const existing = await dnr.getDynamicRules();
   await dnr.updateDynamicRules({
@@ -615,7 +639,7 @@ async function loadAdblockRules(version) {
       .filter((id) => id >= ADBLOCK_FIRST_LIST_RULE_ID && id <= ADBLOCK_LAST_LIST_RULE_ID),
     addRules: rules.map((r, i) => ({ ...r, id: ADBLOCK_FIRST_LIST_RULE_ID + i })),
   });
-  await chrome.storage.local.set({ adblock_rules_version: version });
+  await chrome.storage.local.set({ adblock_rules_version: wanted });
 }
 
 // "a.b.example.com" → ["a.b.example.com", "b.example.com", "example.com"]
@@ -632,10 +656,10 @@ function syncAdblock() {
 }
 
 async function doSyncAdblock() {
-  const { enabled, paused, meta } = await getAdblockSettings();
+  const { enabled, paused, meta, extras } = await getAdblockSettings();
   const dnr = chrome.declarativeNetRequest;
 
-  await loadAdblockRules(enabled ? meta.version : null);
+  await loadAdblockRules(enabled ? meta.version : null, extras);
   // Paused sites: allow everything in pages whose top frame is on that site
   await dnr.updateDynamicRules({
     removeRuleIds: [ADBLOCK_PAUSE_RULE_ID],
@@ -652,13 +676,13 @@ async function doSyncAdblock() {
   // lists exempt ($generichide) — re-register to update the exclusions
   await chrome.scripting.unregisterContentScripts({ ids: [ADBLOCK_CSS_ID] }).catch(() => {});
   if (!enabled) return;
-  const cosmetic = await getAdblockCosmetic();
+  const cosmetic = await getAdblockCosmetic(extras);
   const exempt = [...paused, ...cosmetic.generichide, ...cosmetic.elemhide];
   await chrome.scripting.registerContentScripts([{
     id: ADBLOCK_CSS_ID,
     matches: ["<all_urls>"],
     excludeMatches: exempt.map((h) => `*://*.${h}/*`),
-    css: ["adblock/generic.css"],
+    css: [null, ...extras].map((e) => adblockFile(e, e ? "css" : "generic.css")),
     runAt: "document_start",
     allFrames: true,
   }]);
@@ -667,17 +691,17 @@ async function doSyncAdblock() {
 syncAdblock();
 chrome.runtime.onInstalled.addListener(syncAdblock);
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (changes.adblock_enabled || changes.adblock_paused)) syncAdblock();
+  if (area === "local" && (changes.adblock_enabled || changes.adblock_paused || changes.adblock_extras)) syncAdblock();
 });
 
 // Site-specific hiding rules, plus generic selectors some sites un-hide
 // (so they can't live in the global stylesheet)
 async function adblockCssFor(host) {
-  const { enabled, paused } = await getAdblockSettings();
+  const { enabled, paused, extras } = await getAdblockSettings();
   if (!enabled) return "";
   const chain = hostChain(host);
   if (chain.some((h) => paused.includes(h))) return "";
-  const c = await getAdblockCosmetic();
+  const c = await getAdblockCosmetic(extras);
   if (chain.some((h) => c.elemhide.has(h))) return "";
 
   const selectors = chain.flatMap((h) => c.specific[h] || []);
