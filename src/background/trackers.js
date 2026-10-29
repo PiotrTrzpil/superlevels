@@ -7,8 +7,10 @@
 //  never leaves the browser. Blocking uses dynamic rules 100000–109999;
 //  Ad Block owns the ids below 100000.
 // ═══════════════════════════════════
-const TRACKER_RULE_FIRST = 100000;
-const TRACKER_RULE_LAST = 109999;
+import { createQueue, onLocalChange } from "./lib.js";
+import { handle } from "./messages.js";
+import { TRACKER_RULES } from "./rule-ids.js";
+
 const TRACKER_DOMAINS_PER_RULE = 1000;
 
 let trackerDb;
@@ -101,11 +103,10 @@ async function getTrackerSettings() {
   };
 }
 
-let trackerSyncChain = Promise.resolve();
+// Serialize so quick toggles can't interleave their rule updates
+const trackerQueue = createQueue();
 function syncTrackerRules() {
-  // Serialize so quick toggles can't interleave their rule updates
-  trackerSyncChain = trackerSyncChain.then(doSyncTrackerRules).catch((e) => console.warn("trackers sync:", e));
-  return trackerSyncChain;
+  return trackerQueue(doSyncTrackerRules).catch((e) => console.warn("trackers sync:", e));
 }
 
 async function doSyncTrackerRules() {
@@ -122,7 +123,7 @@ async function doSyncTrackerRules() {
   const addRules = [];
   for (let i = 0; i < sorted.length; i += TRACKER_DOMAINS_PER_RULE) {
     addRules.push({
-      id: TRACKER_RULE_FIRST + addRules.length,
+      id: TRACKER_RULES.first + addRules.length,
       priority: 1, // same as Ad Block's blocks, so list exceptions and the per-site pause still win
       action: { type: "block" },
       condition: { requestDomains: sorted.slice(i, i + TRACKER_DOMAINS_PER_RULE), domainType: "thirdParty" },
@@ -130,17 +131,13 @@ async function doSyncTrackerRules() {
   }
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: existing.map((r) => r.id).filter((id) => id >= TRACKER_RULE_FIRST && id <= TRACKER_RULE_LAST),
+    removeRuleIds: existing.map((r) => r.id).filter((id) => id >= TRACKER_RULES.first && id <= TRACKER_RULES.last),
     addRules,
   });
 }
 
 chrome.runtime.onInstalled.addListener(syncTrackerRules);
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (changes.trackers_blocked || changes.trackers_blocked_categories || changes.trackers_blocked_hosts)) {
-    syncTrackerRules();
-  }
-});
+onLocalChange(["trackers_blocked", "trackers_blocked_categories", "trackers_blocked_hosts"], syncTrackerRules);
 
 // ── Popup ──
 
@@ -169,13 +166,5 @@ async function trackersForTab(tabId) {
   return result;
 }
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "trackersForTab") {
-    trackersForTab(msg.tabId).then(sendResponse);
-    return true;
-  }
-  if (msg.type === "trackersSync") {
-    syncTrackerRules().then(() => sendResponse({}));
-    return true;
-  }
-});
+handle("trackersForTab", ({ tabId }) => trackersForTab(tabId));
+handle("trackersSync", syncTrackerRules);

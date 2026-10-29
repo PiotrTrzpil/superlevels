@@ -47,6 +47,19 @@ export async function launchExtension({ nativeHosts = {} } = {}) {
   return { context, worker, extensionId };
 }
 
+// Send a runtime message to the background, as the popup does. The service worker
+// can't message itself, so it's sent from an extension page (the closed-tabs list,
+// which is small and is left open for the next message).
+export async function sendMessage({ context, extensionId }, msg) {
+  const url = `chrome-extension://${extensionId}/src/pages/closed/closed.html`;
+  let page = context.pages().find((p) => p.url() === url);
+  if (!page) {
+    page = await context.newPage();
+    await page.goto(url);
+  }
+  return page.evaluate((m) => chrome.runtime.sendMessage(m), msg);
+}
+
 // Poll fn() (run in the test) until it returns truthy
 export async function waitFor(fn, { timeout = 5000, interval = 100 } = {}) {
   const end = Date.now() + timeout;

@@ -9,6 +9,9 @@
 //
 //  Every batch of changes is journaled with its inverse, so the popup can undo it.
 // ═══════════════════════════════════
+import { createQueue, onLocalChange } from "./lib.js";
+import { handle } from "./messages.js";
+
 const BRIDGE_HOST = "com.superlevels.bookmarks";
 const BRIDGE_ALARM = "bookmarkBridge";
 const BRIDGE_MAX_BATCHES = 10;
@@ -17,13 +20,7 @@ const BRIDGE_MAX_JOURNAL_CHARS = 4 * 1024 * 1024; // chrome.storage.local holds 
 let bridgePort = null;
 let bridgeError = "";
 // One batch (or undo) at a time, so journals and ids stay consistent.
-let bridgeQueue = Promise.resolve();
-
-function serialized(fn) {
-  const run = bridgeQueue.then(fn);
-  bridgeQueue = run.catch(() => {});
-  return run;
-}
+const serialized = createQueue();
 
 async function syncBridge() {
   const { bookmarks_bridge_enabled } = await chrome.storage.local.get(["bookmarks_bridge_enabled"]);
@@ -185,31 +182,15 @@ function undoLatestBatch() {
 }
 
 // Extension pages (popup, bookmarks.html) apply their own batches here too, so the
-// journal and undo cover every change, not only the bridge's. Content scripts run
-// inside web pages and must never reach these, so only extension pages are answered.
-function fromExtensionPage(sender) {
-  return sender.id === chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL(""));
-}
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (!msg.type?.startsWith("bookmark") || !fromExtensionPage(sender)) return;
-  if (msg.type === "bookmarkBridgeStatus") {
-    sendResponse({ connected: !!bridgePort, error: bridgeError });
-  } else if (msg.type === "bookmarkBridgeUndo") {
-    undoLatestBatch().then(sendResponse, (e) => sendResponse({ error: e.message }));
-    return true; // async sendResponse
-  } else if (msg.type === "bookmarkApplyBatch") {
-    serialized(() => applyAndJournal(msg.ops, undefined, msg.label))
-      .then(sendResponse, (e) => sendResponse({ error: e.message }));
-    return true;
-  }
-});
+// journal and undo cover every change, not only the bridge's. (The message router
+// only answers extension pages, never content scripts.)
+handle("bookmarkBridgeStatus", () => ({ connected: !!bridgePort, error: bridgeError }));
+handle("bookmarkBridgeUndo", undoLatestBatch);
+handle("bookmarkApplyBatch", ({ ops, label }) => serialized(() => applyAndJournal(ops, undefined, label)));
 
 syncBridge();
 chrome.alarms.create(BRIDGE_ALARM, { periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === BRIDGE_ALARM) syncBridge();
 });
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.bookmarks_bridge_enabled) syncBridge();
-});
+onLocalChange(["bookmarks_bridge_enabled"], syncBridge);

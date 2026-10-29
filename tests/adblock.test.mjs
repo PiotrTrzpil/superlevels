@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { launchExtension, waitFor, EXT_DIR } from "./extension.mjs";
+import { launchExtension, sendMessage, waitFor, EXT_DIR } from "./extension.mjs";
 
 const AD_HOSTS = [
   "pagead2.googlesyndication.com",
@@ -59,11 +59,11 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
 
   after(() => ext?.context.close());
 
-  // Run in the service worker: update settings and wait for the rules to swap
-  const setSettings = (settings) => ext.worker.evaluate(async (s) => {
-    await chrome.storage.local.set(s);
-    await syncAdblock();
-  }, settings);
+  // Update settings and wait for the rules to swap
+  async function setSettings(settings) {
+    await ext.worker.evaluate((s) => chrome.storage.local.set(s), settings);
+    await sendMessage(ext, { type: "adblockSync" });
+  }
 
   async function visit(url) {
     const page = await ext.context.newPage();

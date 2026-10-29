@@ -1,6 +1,6 @@
 // ═══════════════════════════════════
 //  superlevels: Photopea No Ads (MAIN world)
-//  Registered dynamically by background.js only while the feature is on.
+//  Registered dynamically by src/background/photopea.js only while the feature is on.
 //
 //  Photopea lays out the editor as innerWidth - 320 (the ad column), so we
 //  report a window 320px wider and photopea.js hides the column.

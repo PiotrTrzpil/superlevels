@@ -9,7 +9,7 @@ import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { chromium } from "playwright-core";
-import { EXT_DIR } from "./extension.mjs";
+import { EXT_DIR, sendMessage } from "./extension.mjs";
 
 const SKIP = new Set(["node_modules", ".git", "tests", ".playwright-mcp"]);
 const GENERATED = /^data\/adblock\//;
@@ -39,13 +39,11 @@ after(async () => {
 });
 
 test("extension loads and Ad Block stays off", async () => {
-  const state = await worker.evaluate(async () => {
-    await syncAdblock();
-    return {
-      rules: (await chrome.declarativeNetRequest.getDynamicRules()).filter((r) => r.id < 100_000).length,
-      css: (await chrome.scripting.getRegisteredContentScripts({ ids: ["sl-adblock-generic"] })).length,
-    };
-  });
+  await sendMessage({ context, extensionId: new URL(worker.url()).host }, { type: "adblockSync" });
+  const state = await worker.evaluate(async () => ({
+    rules: (await chrome.declarativeNetRequest.getDynamicRules()).filter((r) => r.id < 100_000).length,
+    css: (await chrome.scripting.getRegisteredContentScripts({ ids: ["sl-adblock-generic"] })).length,
+  }));
   assert.deepEqual(state, { rules: 0, css: 0 });
 });
 

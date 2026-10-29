@@ -8,7 +8,7 @@ import { describe, test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { launchExtension, waitFor, EXT_DIR } from "./extension.mjs";
+import { launchExtension, sendMessage, waitFor, EXT_DIR } from "./extension.mjs";
 
 const hasDb = existsSync(join(EXT_DIR, "data/trackers/db.json"));
 const needsDb = { skip: !hasDb && "tracker db not built: run pnpm build:trackers" };
@@ -34,21 +34,19 @@ before(async () => {
 
 after(() => ext?.context.close());
 
-const setSettings = (settings) => ext.worker.evaluate(async (s) => {
-  await chrome.storage.local.set(s);
-  await syncAdblock();
-  await syncTrackerRules();
-}, settings);
+async function setSettings(settings) {
+  await ext.worker.evaluate((s) => chrome.storage.local.set(s), settings);
+  await sendMessage(ext, { type: "adblockSync" });
+  await sendMessage(ext, { type: "trackersSync" });
+}
 
 // Load the page and return the panel's data for its tab
 async function visit() {
   const page = await ext.context.newPage();
   await page.goto(PAGE_URL, { waitUntil: "load" });
   await page.waitForTimeout(300);
-  const data = await ext.worker.evaluate(async (url) => {
-    const [tab] = await chrome.tabs.query({ url });
-    return trackersForTab(tab.id);
-  }, PAGE_URL);
+  const tabId = await ext.worker.evaluate(async (url) => (await chrome.tabs.query({ url }))[0].id, PAGE_URL);
+  const data = await sendMessage(ext, { type: "trackersForTab", tabId });
   return { page, data };
 }
 

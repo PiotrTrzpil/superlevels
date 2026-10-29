@@ -49,7 +49,7 @@ const MIN_RULES = 5000;
 const MIN_SELECTORS = 1000;
 const MIN_EXTRA_SELECTORS = 100;
 // Exceptions beat blocks, $important blocks beat exceptions. The per-site
-// pause rule (dynamic, priority 100 in background.js) beats everything.
+// pause rule (dynamic, priority 100 in src/background/adblock.js) beats everything.
 const PRIORITY = { block: 1, allow: 2, important: 3 };
 
 const TYPE_MAP = {
@@ -192,7 +192,7 @@ function compileNetwork(lines) {
     console.warn(`warning: ${rules.length} rules, keeping the first ${MAX_RULES}`);
     rules.length = MAX_RULES;
   }
-  // Rule ids are assigned when background.js loads the rules
+  // Rule ids are assigned when src/background/adblock.js loads the rules
   return { rules, skipped };
 }
 
@@ -354,7 +354,7 @@ if (total > MAX_RULES) throw new Error(`${total} rules with every list on, over 
 
 const hash = createHash("sha256");
 for (const text of Object.values(files)) hash.update(text);
-// Written last: background.js only uses the other files once this exists
+// Written last: the extension only uses the other files once this exists
 files["meta.json"] = JSON.stringify({
   version: hash.digest("hex").slice(0, 16),
   builtAt: new Date().toISOString(),

@@ -90,7 +90,7 @@ requestAnimationFrame(async () => {
 const enabledEl = document.getElementById("enabled");
 const timeoutEl = document.getElementById("timeout");
 const timeoutUnitEl = document.getElementById("timeoutUnit");
-const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // keep in sync with background.js
+const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // keep in sync with src/background/tabcleaner.js
 const MAX_TIMEOUT_MIN = 365 * 24 * 60;
 
 // Show the timeout in the largest unit that divides it evenly
