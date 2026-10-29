@@ -6,13 +6,19 @@ by [@levelsio](https://x.com/levelsio)
 
 Please star SuperLevels if you like it!
 
-A super Chrome extension that replaces 12+ separate extensions with one open-source, privacy-respecting package.
+A super Chrome extension that replaces 20+ separate extensions with one open-source, privacy-respecting package: tab cleaner, ad and tracker blocker, cookie banner dismisser, paywall bypass, dark mode, X and YouTube fixes, bookmark tools, cookie editor, redirect tracer, page summaries and more.
 
 Most Chrome extensions are closed-source malware/spyware-filled garbage that form a massive security risk. This one is open source and you can read and check the source code (with AI) before you install it, and customize it to your liking!
 
-## Demo
-
 ![SuperLevels Demo](assets/demo.gif)
+
+- [Security](#security)
+- [Install](#install)
+- [Features](#features)
+- [Privacy](#privacy)
+- [Permissions](#permissions)
+- [Development](#development)
+- [License and credits](#license-and-credits)
 
 ## Security
 
@@ -25,91 +31,61 @@ Before installing any Chrome extension, you should verify it's safe. This extens
 
 You should do this for **every** Chrome extension you use. Most extensions are closed-source and can't be audited — this one can.
 
+What runs is exactly what's in the repo: there's no bundler, minifier or build step for the extension's code. [Privacy](#privacy) lists every network request it can make, and [Permissions](#permissions) says what each permission is for.
+
+## Install
+
+1. Download or clone this repo
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable **Developer mode** (toggle in the top right corner)
+4. Click **Load unpacked** and select the `superlevels` folder
+5. The 🚀 icon appears in your toolbar. Pin it so the popup is one click away.
+
+**Optional: Ad Block lists and tracker names.** Ad Block and the names in the 👁 Trackers panel need data that isn't in the repo (see [License and credits](#license-and-credits)). Everything else works without it. To add it, run these in the `superlevels` folder with [Node.js](https://nodejs.org) 18 or newer, then click the reload icon on the extension in `chrome://extensions/`:
+
+```sh
+node scripts/build-adblock.mjs    # EasyList, EasyPrivacy and the extra lists → data/adblock/
+node scripts/build-trackers.mjs   # WhoTracks.Me tracker database → data/trackers/
+```
+
+They need no `pnpm install`. Run them again whenever you want fresher lists.
+
+**Updating:** pull or download the new version, then click the reload icon on the extension.
+
 ## Features
 
-### 🚮 Tab Cleaner
-Automatically closes inactive tabs after a configurable timeout (default: 3 days; time away from the computer or with Chrome closed doesn't count). Set excluded hosts to keep important tabs alive. Closed tabs are saved to a OneTab-style list page (opened automatically in the background), grouped by day — click a tab to restore it, or restore/delete a whole day at once.
+The popup is grouped like this. On X, YouTube and Photopea it opens on 🌐 Sites; elsewhere it reopens the page you last used.
 
-### 🍪 Cookie Editor
-Full cookie manager for the current site. View, edit, add, and delete cookies. Export cookies as JSON. Expand any cookie to see and modify all fields including domain, path, SameSite, secure, and httpOnly flags.
+| Group | Pages |
+|---|---|
+| 🗂 Organize | 🚮 Tabs · 🔖 Bookmarks |
+| ⚡ This page | ✨ Summarize · 🖼 PiP · 🎵 Music |
+| 🛡 Privacy | 🛡 Blocking (Ad Block, cookie banners, No Paywall) · 👁 Trackers |
+| 🌐 Sites | X dim mode, X unhook, X reply audience, YouTube unhook, Photopea no ads |
+| 🎨 Look | 🌙 Dark mode · 🎨 Live CSS |
+| 🛠 Dev | 🍪 Cookies · 🔀 Redirects · ⚡ Toggles (JavaScript, JSON formatter) |
 
-### 🔀 Redirect Tracer
-See every redirect hop your browser took to reach the current page. Shows status codes (301, 302, 307, etc.) with a visual chain. Copy the full redirect chain to clipboard.
+### 🗂 Organize
 
-### 🌙 Dark Mode
-Instant dark mode for any website using CSS filter inversion. Adjustable brightness. Toggle per-site or globally. Images and videos are automatically re-inverted so they look normal.
+#### 🚮 Tab Cleaner
+Closes tabs you haven't looked at for a while (default: 3 days; you can set minutes, hours or days). Time away from the computer, with the screen locked, or with Chrome closed doesn't count, so a long weekend doesn't empty your browser. It never closes the active tab, pinned tabs, tabs playing audio, incognito tabs, or the last tab in a window. Excluded hosts (and their subdomains) are never closed.
 
-### 𝕏 X Dim Mode
-Custom dim theme for X/Twitter with 7 color palettes: Dim, Slate, Jade, Plum, Dusk, Ember, or a custom hue. Live preview in the popup.
+Closed tabs go to a OneTab-style list, opened in the background, grouped by day. Click a tab to reopen it, or reopen or delete a whole day at once. The list keeps the last 2,000 tabs.
 
-### ⚡ JS Toggle
-Disable JavaScript per-site with one click. Useful for debugging, reading articles without popups, or testing progressive enhancement. Page reloads automatically.
+#### 🔖 Bookmark tools
+The 🔖 Bookmarks page opens three tools in a tab of their own. None of them changes anything until you apply it, and every change is applied as one batch that you can undo from the popup.
 
-### 🚫 GDPR Cookie Consent Dismisser
-Auto-hides and auto-clicks cookie consent banners. Supports OneTrust, CookieBot, Didomi, Quantcast, GDPR plugins, and dozens more frameworks. Toggle off if a site breaks.
+- **📥 Inbox** files the bookmarks that pile up in one folder (Mobile bookmarks by default, so everything saved on your phone) into the folders where they belong. A bookmark gets a suggested folder only when the evidence is clear: it's already bookmarked there, or most of that site's bookmarks live there. Accept, pick another folder (typing a new path creates it), or delete. Decisions stay pending, even across reloads, until you apply them.
+- **🪦 Dead links** checks every bookmark while its tab is open and finds the ones that are really gone: a 404 or 410, or a site that can't be reached at all. A bookmark only counts as dead after failing on two scans at least 20 hours apart, so a brief outage never costs you a bookmark. Login walls, 403s, server errors and timeouts go under "Check yourself", and local-network addresses are skipped.
+- **🧹 Tidy** finds the same page saved more than once (http/https, `www.`, trailing slashes and tracking parameters don't matter), URLs carrying tracking parameters such as `utm_*` or `fbclid`, and empty folders. For duplicates, the copy in the most specific folder is kept, and you can pick another. If the kept copy has no real title, it takes one from a removed copy.
 
-### 🎨 Live CSS Editor
-Write custom CSS for any website, applied in real-time as you type. Saved per-domain. Supports tab key for indentation.
-
-### 📺 YouTube Unhook
-Removes YouTube distractions: no homepage feed, no sidebar suggestions, no end screen overlays, no Shorts. Search still works — just no algorithmic recommendations.
-
-### 🫛 Photopea No Ads
-Hides the 320px ad column on [photopea.com](https://www.photopea.com) and expands the editor to the full window width (Photopea sizes the editor from `window.innerWidth - 320`, so a main-world script reports the window as 320px wider). Toggle in the popup.
-
-### 🛡 Ad Block
-Blocks ad and tracker requests and hides the empty ad slots they leave behind, like [uBlock Origin Lite](https://github.com/uBlockOrigin/uBOL-home). [EasyList](https://easylist.to) and EasyPrivacy are compiled into Chrome's built-in `declarativeNetRequest` rules (about 13,000 rules covering roughly 90,000 domains), so Chrome does the blocking itself and no page traffic passes through the extension. The icon badge shows how many requests were blocked on the current page. Pause it per site if something breaks. Not included: YouTube video ads, popup blocking, and scriptlet/procedural filters.
-
-**Extra lists**, each off until you switch it on: cookie notices, social widgets (like/share buttons, embedded feeds), newsletter pop-ups, notification prompts, and other annoyances (chat widgets, "open in app" banners). These are [Fanboy's lists](https://easylist.to) from the EasyList authors. With every list on, it comes to about 17,000 rules, inside Chrome's 30,000-rule budget for dynamic rules.
-
-**Optional, needs a one-time build.** The compiled lists aren't in the repo. Until you build them, Ad Block stays off and everything else works normally. See [Install](#install), step 7.
-
-### 👁 Trackers
-Shows which third parties the current page talks to: each tracker's name, company and category (advertising, analytics, social media…), how many requests it made, and whether they were blocked, like the old Ghostery. Block a single tracker, an unknown host, or a whole category (advertising, analytics, social, chat widgets…) everywhere with one switch. Categories that break sites when blocked (CDNs, video players, "essential") can only be blocked one tracker at a time. Requests are only observed, and the log stays in your browser.
-
-Names and categories come from the [WhoTracks.Me](https://whotracks.me) database (via [AdGuard companiesdb](https://github.com/AdguardTeam/companiesdb)). It's optional too: without it, the panel lists bare hostnames. Build it with `node scripts/build-trackers.mjs` (see [Install](#install), step 7).
-
-### 🗄 No Paywall
-Opens paywalled news articles straight on [archive.is](https://archive.is) — e.g. an nytimes.com article goes to `archive.is/https://www.nytimes.com/...`. Only article URLs redirect (homepages and section fronts don't), tracking params are stripped so existing snapshots match, and links clicked from an archive page open the original. The site list (NYT, WSJ, FT, Bloomberg, Economist, plus Dutch, German, French, Italian, Spanish and Nordic papers like NRC, Volkskrant, Spiegel, Zeit, Le Monde, Corriere, El País) is editable in the popup.
-
-### 🎵 Music Recognizer
-Shazam-like music identification for any tab. Captures 10 seconds of audio and identifies the song via [ACRCloud](https://www.acrcloud.com/sign-up/) (free signup, bring your own API key). Results link to YouTube. History of recognized songs.
-
-### 🖼 Picture-in-Picture
-Pop the largest video on the current tab into a floating PiP window with one click.
-
-### 🗺 Google Maps Links
-Re-adds clickable Maps links and map preview cards to Google Search results.
-
-### 🖼 View Image
-Adds a "View Image" button back to Google Images, linking directly to the full-size original image.
-
-### {} JSON Formatter
-Auto-detects pure JSON response pages and formats them with syntax highlighting, collapsible sections, and a dark theme. Copy or view raw with one click. Never triggers on regular HTML pages.
-
-### 📥 Bookmark Inbox
-Files the bookmarks that pile up in one folder (Mobile bookmarks by default, so everything saved on your phone) into the folders where they belong. A bookmark gets a suggested folder only when the evidence is clear: it's already bookmarked there, or most of that site's bookmarks live there. Accept, pick another folder (typing a new path creates it), or delete. Decisions stay pending until you apply them as one batch, which you can undo from the popup.
-
-### 🪦 Dead Links
-Checks every bookmark while the tab is open and finds the ones that are really gone: a 404 or 410, or a site that can't be reached at all. A bookmark is only called dead after it fails on two scans at least 20 hours apart, so a brief outage never costs you a bookmark. Login walls, 403s, server errors and timeouts go under "Check yourself", and local-network addresses are skipped. "Remove selected" deletes the checked ones in one batch you can undo from the popup.
-
-### 🧹 Tidy Bookmarks
-Finds three kinds of clutter:
-- the same page saved more than once (http/https, `www.`, trailing slashes and tracking parameters don't matter);
-- URLs carrying tracking parameters such as `utm_*` or `fbclid`;
-- folders with no bookmarks in them.
-
-Every change is previewed before anything happens. For duplicates, the copy in the most specific folder is kept, and you can pick another. If the kept copy has no real title, it takes one from a removed copy. Each section is applied as one batch you can undo from the popup.
-
-All three open from the popup's **🔖 Bookmarks** page.
-
-### 🔖 Bookmark Bridge
-Lets programs on your computer reorganize your bookmarks through Chrome's own bookmarks API while Chrome runs, so Chrome Sync uploads the changes the way it uploads edits you make by hand. (Editing Chrome's `Bookmarks` file instead doesn't sync reliably: Sync can undo the edits or bring deleted bookmarks back.) Every batch of changes is listed in the popup and can be undone from there. Off by default. While off, no program runs and nothing can change your bookmarks.
+#### 🔗 Bookmark Bridge
+Lets programs on your computer reorganize your bookmarks through Chrome's own bookmarks API while Chrome runs, so Chrome Sync uploads the changes the way it uploads edits you make by hand. (Editing Chrome's `Bookmarks` file instead doesn't sync reliably: Sync can undo the edits or bring deleted bookmarks back.) Every batch of changes is listed on the 🔖 Bookmarks page and can be undone there. Off by default. While off, no program runs and nothing can change your bookmarks.
 
 <details>
 <summary>Protocol for writing a host</summary>
 
-When the bridge is on, the extension connects to the [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging) host `com.superlevels.bookmarks`. Register it by writing `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.superlevels.bookmarks.json`, with `allowed_origins` set to this extension's id. The connection stays open, and the extension retries every minute if it drops.
+When the bridge is on, the extension connects to the [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging) host `com.superlevels.bookmarks`. Register it with a host manifest named `com.superlevels.bookmarks.json`, with `allowed_origins` set to this extension's id. On macOS it goes in `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`; Chrome's docs list the locations on other systems. The connection stays open, and the extension retries every minute if it drops.
 
 The host sends requests `{id, method, params}`. The extension answers `{id, result}` or `{id, error}`.
 
@@ -128,47 +104,178 @@ The host sends requests `{id, method, params}`. The extension answers `{id, resu
 
 A `create`'s `ref` can be used as `id` or `parentId` by later ops in the same request. `created` maps each ref to its new id. `remove` refuses a folder that isn't empty, so remove its contents first. Requests that share a `batch` id appear as one entry in the popup and are undone together. `label` names that entry.
 
-Messages to the extension are limited to 1 MB, so split large changes into several requests with the same `batch`. Code: `src/background/bookmarkbridge.js`.
+Messages to the extension are limited to 1 MB, so split large changes into several requests with the same `batch`. Code: `src/background/bookmarkbridge.js`; `tests/fixtures/fake-bookmark-host.mjs` is a minimal host used by the tests.
 </details>
 
-## Install
+### ⚡ This page
 
-1. Download or clone this repo
-2. Open Chrome and go to `chrome://extensions/`
-3. Click **Manage Extensions** if you're not already there
-4. Enable **Developer mode** (toggle in the top right corner)
-5. Click **Load unpacked**
-6. Select the `superlevels` folder
-7. *Optional, for Ad Block:* with [Node.js](https://nodejs.org) 18 or newer, run this in the `superlevels` folder, then click the reload icon on the extension in `chrome://extensions/`:
-   ```sh
-   node scripts/build-adblock.mjs
-   ```
-   This downloads EasyList, EasyPrivacy and the optional extra lists and compiles them into `data/adblock/`. It needs no `pnpm install`. Run it again whenever you want fresher lists. *For tracker names in the 👁 Trackers panel*, also run `node scripts/build-trackers.mjs`.
-8. The 🚀 icon appears in your toolbar — you're done!
+#### ✨ Summarize
+Summarizes the current page with OpenAI, Anthropic or xAI, using your own API key. Pick a length: a few sentences, bullet points, or a detailed summary. The model can be changed per provider. Only the page's main text is sent (up to 20,000 characters), and only when you click Summarize.
+
+#### 🖼 Picture-in-Picture
+Pops the current tab's video into a floating window (the largest one playing, or the largest one if none is). Clicking the PiP tab toggles it right away; click again to bring the video back.
+
+#### 🎵 Music Recognizer
+Shazam-like song identification for whatever plays in the current tab. It records 10 seconds of the tab's audio (you keep hearing it) and identifies the song with [ACRCloud](https://www.acrcloud.com/sign-up/) (free signup, bring your own key). Results link to a YouTube search, and the last 20 songs are kept in a history.
+
+### 🛡 Privacy
+
+#### 🛡 Ad Block
+Blocks ad and tracker requests and hides the empty ad slots they leave behind, like [uBlock Origin Lite](https://github.com/uBlockOrigin/uBOL-home). [EasyList](https://easylist.to) and EasyPrivacy are compiled into Chrome's built-in `declarativeNetRequest` rules (about 13,000 rules covering roughly 90,000 domains), so Chrome does the blocking itself and no page traffic passes through the extension. The icon badge shows how many requests were blocked on the current page. Pause it per site if something breaks. Not included: YouTube video ads, popup blocking, and scriptlet/procedural filters.
+
+**Extra lists**, each off until you switch it on: cookie notices, social widgets (like/share buttons, embedded feeds), newsletter pop-ups, notification prompts, and other annoyances (chat widgets, "open in app" banners). These are [Fanboy's lists](https://easylist.to) from the EasyList authors. With every list on, it comes to about 17,000 rules, inside Chrome's 30,000-rule budget for dynamic rules.
+
+Needs the one-time build in [Install](#install). Until then the popup shows "NOT BUILT" and everything else works normally.
+
+#### 🚫 Cookie banners
+Hides and auto-dismisses cookie consent pop-ups. Covers OneTrust, Cookiebot, Didomi, Usercentrics, iubenda, Osano and many more consent frameworks. Turn it off if a site breaks.
+
+#### 🗄 No Paywall
+Opens paywalled news articles straight on [archive.is](https://archive.is): an nytimes.com article goes to `archive.is/https://www.nytimes.com/...`. Only article URLs redirect (homepages and section fronts don't), tracking parameters are dropped so existing snapshots match, and links clicked from an archive page open the original. The site list (NYT, WSJ, FT, Bloomberg, The Economist, plus Dutch, Belgian, German, French, Italian, Spanish and Nordic papers like NRC, De Standaard, Spiegel, Le Monde, Corriere, El País) is editable in the popup.
+
+#### 👁 Trackers
+Shows which third parties the current page talks to: each tracker's name, company and category (advertising, analytics, social media…), how many requests it made, and whether they were blocked, like the old Ghostery. Block a single tracker, an unknown host, or a whole category everywhere with one switch. Categories that break sites when blocked (CDNs, video players, "essential") can only be blocked one tracker at a time. Requests are only observed, and the log stays in your browser.
+
+Names and categories come from the [WhoTracks.Me](https://whotracks.me) database (via [AdGuard companiesdb](https://github.com/AdguardTeam/companiesdb)), added by the optional build in [Install](#install). Without it, the panel lists bare hostnames.
+
+### 🌐 Sites
+
+#### 𝕏 X dim mode
+Brings back a dim theme for X/Twitter: Dim, Slate, Jade, Plum, Dusk, Ember, or any hue you pick, with a live preview in the popup. Off by default.
+
+#### 𝕏 X unhook
+Hides the right sidebar's panels (trends, news, who to follow, Premium upsells) while keeping search, and removes Explore from the navigation.
+
+#### 𝕏 X reply audience
+When you start a new post, opens the "Who can reply?" picker and selects "Accounts you follow and who they follow" for you.
+
+#### 📺 YouTube unhook
+Removes YouTube distractions, each switchable on its own: the homepage feed, sidebar suggestions, end-screen overlays and Shorts shelves, plus a wider video player. Search still works — just no algorithmic recommendations.
+
+#### 🫛 Photopea no ads
+Hides the 320px ad column on [photopea.com](https://www.photopea.com) and expands the editor to the full window width. (Photopea sizes the editor from `window.innerWidth - 320`, so a script in the page reports the window as 320px wider.)
+
+### 🎨 Look
+
+#### 🌙 Dark mode
+Dark mode for any website by inverting its colors, with images and videos inverted back so they look normal. Adjustable brightness. Turn it on for the current site or for all sites.
+
+#### 🎨 Live CSS
+Write your own CSS for any website, applied as you type and saved per site. Tab inserts spaces.
+
+### 🛠 Dev
+
+#### 🍪 Cookie editor
+Lists the current site's cookies. Edit a cookie's name, value, domain, path and SameSite (secure and HttpOnly are shown), add or delete cookies, delete them all, or export them as JSON.
+
+#### 🔀 Redirect tracer
+Shows every redirect hop the current tab took to reach its page, with status codes (301, 302, 307…) as a chain. Copy the chain to the clipboard.
+
+#### ⚡ JavaScript toggle
+Turns JavaScript off (or back on) for the current site, over http and https. The page reloads to apply it. Handy for debugging or for articles that nag.
+
+#### {} JSON formatter
+Formats pages that are pure JSON with syntax highlighting, collapsible sections and a dark theme, with one-click copy and raw view. Never triggers on regular HTML pages.
+
+### Always on
+
+#### 🗺 Google Maps links
+Brings back the Maps tab and clickable map previews in Google Search results.
+
+#### 🖼 View Image
+Adds a "View Image" button to Google Images that opens the full-size original.
+
+## Privacy
+
+- **No data collection, no analytics, no tracking, no phone-home.** Settings, history and logs stay in your browser, in `chrome.storage`.
+- **The extension only contacts the network in these cases, each started by you:**
+
+  | Feature | Contacts | When |
+  |---|---|---|
+  | ✨ Summarize | OpenAI, Anthropic or xAI (the one you pick) | When you click Summarize: the page's title, URL and text |
+  | 🎵 Music | ACRCloud | When you click Listen: a 10-second audio clip |
+  | 🪦 Dead links | Each bookmarked site | While the Dead links tab is open: a `HEAD` (or `GET`) request per bookmark, without cookies |
+  | 🗄 No Paywall | archive.is | When you open an article on a site in its list |
+  | 🔗 Bookmark Bridge | A program on your computer | While it's on: Chrome native messaging, never the network |
+
+- API keys for Summarize and Music are stored in `chrome.storage.local` and only sent to that provider.
+- Ad Block's lists and the tracker database are downloaded only when you run the builds yourself, never by the extension.
+- The 👁 Trackers panel logs which hosts each tab contacts, in memory and session storage only. A tab's log is cleared when the tab closes.
+- All source code is right here. Read it, audit it, fork it.
+
+## Permissions
+
+The extension asks for these in `manifest.json`:
+
+| Permission | Why |
+|---|---|
+| Access to all sites (`<all_urls>`) | Content scripts (dark mode, cookie banners, Live CSS, JSON formatter), Ad Block's hiding CSS, the Trackers log, the Redirect tracer, Dead links checks |
+| `tabs`, `activeTab` | Tab Cleaner, and knowing which site the popup is acting on |
+| `storage` | Settings, the closed-tabs list, history |
+| `alarms`, `idle` | The Tab Cleaner's once-a-minute check, and pausing it while you're away |
+| `cookies` | Cookie editor |
+| `webRequest`, `webNavigation` | Redirect tracer, Trackers log (observe only), No Paywall, Ad Block's per-site hiding |
+| `declarativeNetRequest` | Ad Block and Trackers blocking, done by Chrome itself |
+| `scripting` | PiP, Summarize (reading page text), Photopea and Ad Block's registered scripts |
+| `contentSettings` | JavaScript toggle |
+| `tabCapture` | Music Recognizer (the current tab's audio) |
+| `bookmarks` | Bookmark tools and Bookmark Bridge |
+| `nativeMessaging` | Bookmark Bridge |
+| `favicon` | Site icons on the closed-tabs list and bookmark pages |
 
 ## Development
 
-The only build steps are the optional Ad Block lists and tracker database. Their outputs (everything under `data/`) are gitignored.
+There's no build step for the extension itself. Its code is plain JavaScript that Chrome loads as is: edit a file, then reload the extension in `chrome://extensions/`. Background and popup code are ES modules; content scripts are classic scripts, because Chrome can't load content scripts as modules.
 
-**Build the ad block lists.** This writes `data/adblock/rules.json`, `data/adblock/generic.css`, `data/adblock/cosmetic.json`, the same three as `data/adblock/extra-<list>.*` for each extra list, and `data/adblock/meta.json`:
+### Project layout
+
+```
+manifest.json
+src/
+  background/   service worker: index.js imports one module per feature
+  popup/        popup.html, popup.css, main.js (navigation)
+    features/   one module per feature: wires its controls, exports its load()
+    lib/        shared popup helpers: feature switches, active tab, escaping
+  content/      content scripts, per site: x/, youtube/, google/, photopea/
+  pages/        extension pages: bookmarks/ (Inbox, Dead links, Tidy), closed/
+  shared/       defaults used by both popup and background
+assets/         icons, demo
+scripts/        build-adblock.mjs, build-trackers.mjs
+data/           build output (gitignored)
+tests/          end-to-end tests
+```
+
+### How the parts talk
+
+- **Settings live in `chrome.storage.local`.** The popup writes them; the background and content scripts read them and react to changes. Keys are named after their feature (`xdim_enabled`, `adblock_paused`…).
+- **Popup → content script:** after a change, the popup messages the active tab (`sendToActiveTab` in `src/popup/lib/tabs.js`) so the page updates without a reload.
+- **Popup and extension pages → background:** `chrome.runtime.sendMessage({ type, … })`. Each background module registers its handlers with `handle(type, fn)` from `src/background/messages.js`, which answers extension pages only; content scripts never message the background.
+- **Blocking rules:** Ad Block owns dynamic rule ids below 100,000 and the Trackers panel owns 100,000–109,999 (`src/background/rule-ids.js`). Each only replaces rules in its own range.
+
+### Adding a feature
+
+1. **Page behavior:** add a content script under `src/content/` and list it in `manifest.json`.
+2. **Popup controls:** add markup to `src/popup/popup.html` and a module in `src/popup/features/` that wires the controls and exports its loader. Register the loader for its page in `PAGE_LOADERS` in `src/popup/main.js`. A plain on/off switch is a single `featureToggle({ key, toggle, status, onChange })` call; see `features/nocookie.js`.
+3. **Background work:** add a module in `src/background/` and import it from `index.js`. Register event listeners at the top level of the module, so they're in place when Chrome wakes the worker.
+
+### Build the optional data
+
+Their outputs (everything under `data/`) are gitignored.
 
 ```sh
 pnpm build:adblock                                            # download fresh lists, extras included
 node scripts/build-adblock.mjs easylist.txt easyprivacy.txt   # or core lists only, from local copies
-```
-
-Every list can be on at once, so the build also fails if all of them together would exceed the 29,000-rule budget. The tracker panel's block rules use dynamic rule ids 100,000–109,999. Ad Block owns the ids below that.
-
-**Build the tracker database.** This writes `data/trackers/db.json`:
-
-```sh
 pnpm build:trackers                                           # download from AdGuard companiesdb
 node scripts/build-trackers.mjs trackers.json companies.json  # or use local copies
 ```
 
-The build fails and writes nothing if a download fails, if any rule wouldn't be valid for Chrome, or if the lists look too small. It writes all files at once, so an interrupted build can't leave a mix of old and new. `meta.json` marks a finished build, and the extension turns Ad Block on only when that file exists. The rules are loaded as dynamic `declarativeNetRequest` rules, because a static ruleset in the manifest whose file is missing would stop the whole extension from loading. Then reload the extension in `chrome://extensions` and run the tests.
+The Ad Block build writes `rules.json`, `generic.css` and `cosmetic.json`, the same three as `extra-<list>.*` for each extra list, and `meta.json`, all in `data/adblock/`. It fails and writes nothing if a download fails, if any rule wouldn't be valid for Chrome, if the lists look too small, or if all lists together would exceed the 29,000-rule budget. All files are written at once, so an interrupted build can't leave a mix of old and new.
 
-**Run the tests.** This is an end-to-end run in a real Chromium with the extension loaded. Requests are answered locally, so no network is needed. It takes about 4 seconds.
+`meta.json` marks a finished build, and the extension turns Ad Block on only when that file exists. The rules are loaded as dynamic `declarativeNetRequest` rules, because a static ruleset in the manifest whose file is missing would stop the whole extension from loading.
+
+### Run the tests
+
+End-to-end tests in a real Chromium with the extension loaded. Web requests are answered locally, so no network is needed. 48 tests take about 10 seconds.
 
 ```sh
 pnpm install
@@ -177,21 +284,13 @@ pnpm test              # Ad Block tests are skipped until the lists are built
 HEADED=1 pnpm test     # watch it run in a visible window
 ```
 
-The tests use Playwright's Chromium because branded Google Chrome ignores `--load-extension`. `tests/extension.mjs` has a small `launchExtension()` helper for writing tests for the other features too.
+The tests use Playwright's Chromium because branded Google Chrome ignores `--load-extension`. `tests/extension.mjs` has helpers for new tests: `launchExtension()` starts Chromium with the extension, `sendMessage()` sends the background a message the way the popup does, and `waitFor()` polls until something is true.
 
-## Privacy
-
-- **No data collection.** Everything stays local in `chrome.storage.local`.
-- **No analytics, no tracking, no phone-home.**
-- The Bookmark Bridge is off by default. When on, it talks only to a local program you installed (Chrome native messaging), never to the network.
-- Ad Block's filter lists and the tracker database are downloaded only when you run the builds yourself, never by the extension at runtime.
-- The 👁 Trackers panel logs which hosts each tab contacts, in memory and session storage only. The log is cleared when the tab closes.
-- The only external network request is the Music Recognizer, which sends a short audio clip to ACRCloud — and only when you explicitly click "Listen" and provide your own API keys.
-- All source code is right here. Read it, audit it, fork it.
-
-## License
+## License and credits
 
 MIT, for the extension's code.
+
+Some features started from other open-source projects: X dim mode from [x-dim-mode](https://github.com/juanbuis/x-dim-mode), YouTube unhook from remove-youtube-suggestions, and cookie banners from I Still Don't Care About Cookies.
 
 The optional data the builds download isn't in this repo and keeps its own licence:
 
