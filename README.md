@@ -152,7 +152,7 @@ Hides the right sidebar's panels (trends, news, who to follow, Premium upsells) 
 When you start a new post, opens the "Who can reply?" picker and selects "Accounts you follow and who they follow" for you.
 
 #### 📺 YouTube unhook
-Removes YouTube distractions, each switchable on its own: the homepage feed, sidebar suggestions, end-screen overlays and Shorts shelves, plus a wider video player. Search still works — just no algorithmic recommendations.
+Removes YouTube distractions, each switchable on its own: sidebar suggestions, end-screen overlays and Shorts shelves, plus a wider video player. Hiding the homepage feed is also available, off by default. Search still works — just no algorithmic recommendations.
 
 #### 🫛 Photopea no ads
 Hides the 320px ad column on [photopea.com](https://www.photopea.com) and expands the editor to the full window width. (Photopea sizes the editor from `window.innerWidth - 320`, so a script in the page reports the window as 320px wider.)

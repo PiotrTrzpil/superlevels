@@ -5,7 +5,8 @@ import { sendToActiveTab } from "../lib/tabs.js";
 import { featureToggle } from "../lib/toggle.js";
 
 const unhookFeatureEls = document.querySelectorAll("#unhookFeatures .unhook-feature");
-const UNHOOK_FEATURE_DEFAULTS = { homepage: true, sidebar: true, endscreen: true, shorts: true, wider: true };
+// Keep in sync with DEFAULT_FEATURES in src/content/youtube/unhook.js
+const UNHOOK_FEATURE_DEFAULTS = { homepage: false, sidebar: true, endscreen: true, shorts: true, wider: true };
 
 async function getUnhookFeatures() {
   const data = await chrome.storage.local.get(["unhook_features"]);

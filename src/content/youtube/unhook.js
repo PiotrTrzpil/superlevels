@@ -78,17 +78,19 @@
     `,
   };
 
+  // Keep in sync with UNHOOK_FEATURE_DEFAULTS in src/popup/features/unhook.js
   const DEFAULT_FEATURES = {
-    homepage: true,
+    homepage: false,
     sidebar: true,
     endscreen: true,
     shorts: true,
     wider: true,
   };
 
-  function buildCSS(features) {
+  function buildCSS(stored) {
+    const features = { ...DEFAULT_FEATURES, ...stored };
     return Object.keys(FEATURE_CSS)
-      .filter((key) => features[key] !== false)
+      .filter((key) => features[key])
       .map((key) => FEATURE_CSS[key])
       .join("\n");
   }
@@ -99,7 +101,7 @@
       if (existing) existing.remove();
       return;
     }
-    const css = buildCSS(features || DEFAULT_FEATURES);
+    const css = buildCSS(features);
     if (existing) {
       existing.textContent = css;
       return;
