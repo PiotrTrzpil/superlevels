@@ -122,16 +122,15 @@ describe("Trackers panel", () => {
     const popup = await ext.context.newPage();
     const errors = [];
     popup.on("pageerror", (e) => errors.push(e.message));
+    // Opened as a tab, the popup is itself the active tab; make it see the test page instead
+    await popup.addInitScript((id) => {
+      const query = chrome.tabs.query.bind(chrome.tabs);
+      chrome.tabs.query = async (q) => (q.active ? [await chrome.tabs.get(id)] : query(q));
+    }, tabId);
     await popup.goto(`chrome-extension://${ext.extensionId}/src/popup/popup.html`);
     await popup.click('.nav button[data-group="privacy"]');
     await popup.click('.subnav button[data-page="trackers"]');
-    // The popup's own tab is "active" here, so once its (empty) first render
-    // is done, point it at the test page instead
-    await waitFor(() => popup.textContent("#trkSummary"));
-    await popup.evaluate(async (id) => {
-      trkTabId = id;
-      renderTrackers(await chrome.runtime.sendMessage({ type: "trackersForTab", tabId: id }));
-    }, tabId);
+    await waitFor(async () => /third parties/.test(await popup.textContent("#trkSummary")));
     assert.match(await popup.textContent("#trkSummary"), /^4 third parties · 0 blocked$/);
     const names = await popup.$$eval("#trkList .trk-name", (els) => els.map((e) => e.firstChild.textContent));
     assert.ok(names.includes(hasDb ? "Criteo" : "static.criteo.net"), names.join());
