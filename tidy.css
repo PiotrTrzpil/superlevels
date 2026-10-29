@@ -1,0 +1,31 @@
+/* 🧹 Tidy view */
+#view-tidy .tidy-summary { font-weight: 600; color: #ccc; }
+#view-tidy .tidy-status { margin: -6px 0 14px; }
+#view-tidy .tidy-status:empty { display: none; }
+#view-tidy label.row { cursor: pointer; }
+#view-tidy input[type="checkbox"] { accent-color: #e94560; flex-shrink: 0; }
+
+/* Duplicates: one box per page, the kept copy on top */
+#view-tidy .tidy-dup {
+  border: 1px solid #2a2a4a; border-radius: 8px; padding: 4px 0; margin-bottom: 8px;
+}
+#view-tidy .tidy-keep { background: #16213e55; }
+#view-tidy .tidy-badge { /* as wide as the checkboxes below */
+  flex-shrink: 0; width: 13px; text-align: center; color: #4ade80; font-weight: 700;
+}
+#view-tidy .tidy-remove .title a { color: #aaa; }
+#view-tidy .tidy-remove:has(input:checked) .title a { text-decoration: line-through; color: #777; }
+#view-tidy .tidy-remove button.link { flex-shrink: 0; }
+#view-tidy .tidy-rename { color: #4ade80; }
+
+/* Tracking parameters: before → after */
+#view-tidy .tidy-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#view-tidy .tidy-url {
+  font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #888; word-break: break-all;
+}
+#view-tidy .tidy-url mark { background: #e9456033; color: #ff6b81; text-decoration: line-through; border-radius: 3px; }
+#view-tidy .tidy-url.after { color: #4ade80; }
+
+/* Empty folders */
+#view-tidy .tidy-folder-icon { flex-shrink: 0; }
+#view-tidy .tidy-folder .title { color: #ccc; white-space: nowrap; text-overflow: ellipsis; }

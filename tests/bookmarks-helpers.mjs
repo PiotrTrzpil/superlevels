@@ -4,8 +4,9 @@
 import { launchExtension } from "./extension.mjs";
 
 // Launch Chromium with the extension and open bookmarks.html#<view>.
-export async function openBookmarks(view = "") {
-  const ext = await launchExtension();
+// Options go to launchExtension (e.g. nativeHosts).
+export async function openBookmarks(view = "", options = {}) {
+  const ext = await launchExtension(options);
   const page = await ext.context.newPage();
   await page.goto(`chrome-extension://${ext.extensionId}/bookmarks.html#${view}`);
   await page.waitForFunction(() => typeof BM !== "undefined");
