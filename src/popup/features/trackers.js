@@ -1,6 +1,7 @@
 // ═══════════════════════════════════
 //  Trackers
 // ═══════════════════════════════════
+import { activeTab } from "../lib/tabs.js";
 
 const TRACKER_CATEGORIES = {
   advertising: "Advertising", site_analytics: "Analytics", social_media: "Social media",
@@ -26,7 +27,7 @@ const trkReload = document.getElementById("trkReload");
 let trkTabId = null;
 
 export async function loadTrackers() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   trkTabId = tab?.id ?? null;
   const data = trkTabId === null ? null : await chrome.runtime.sendMessage({ type: "trackersForTab", tabId: trkTabId });
   renderTrackers(data);

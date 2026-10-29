@@ -1,9 +1,9 @@
 // ═══════════════════════════════════
 //  Picture-in-Picture
 // ═══════════════════════════════════
+import { activeTab } from "../lib/tabs.js";
 
 const pipBtn = document.getElementById("pipBtn");
-const pipLabel = document.getElementById("pipLabel");
 const pipStatus = document.getElementById("pipStatus");
 
 pipBtn.addEventListener("click", enterPiP);
@@ -12,7 +12,7 @@ export async function enterPiP() {
   pipStatus.textContent = "";
   pipStatus.className = "pip-status";
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   if (!tab) {
     pipStatus.textContent = "No active tab";
     pipStatus.className = "pip-status err";

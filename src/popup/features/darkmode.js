@@ -1,6 +1,8 @@
 // ═══════════════════════════════════
 //  Dark Mode
 // ═══════════════════════════════════
+import { activeTab, sendToActiveTab } from "../lib/tabs.js";
+import { showStatus } from "../lib/toggle.js";
 
 const darkToggle = document.getElementById("darkToggle");
 const darkStatus = document.getElementById("darkStatus");
@@ -14,7 +16,7 @@ let darkHost = "";
 let darkScope = "site"; // "site" or "global"
 
 export async function loadDarkMode() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   if (!tab || !tab.url) return;
 
   try { darkHost = new URL(tab.url).hostname; } catch { darkHost = ""; }
@@ -32,18 +34,13 @@ export async function loadDarkMode() {
   const enabled = siteState !== undefined ? siteState : globalState;
 
   darkToggle.checked = enabled;
-  updateDarkStatus(enabled);
-}
-
-function updateDarkStatus(on) {
-  darkStatus.textContent = on ? "ON" : "OFF";
-  darkStatus.className = "status " + (on ? "on" : "off");
+  showStatus(darkStatus, enabled);
 }
 
 async function applyDark() {
   const enabled = darkToggle.checked;
   const brightness = parseInt(darkBrightness.value);
-  updateDarkStatus(enabled);
+  showStatus(darkStatus, enabled);
 
   // Save preference
   if (darkScope === "global") {
@@ -66,14 +63,7 @@ async function applyDark() {
   await chrome.storage.local.set({ darkmode_brightness: brightness });
 
   // Send to active tab's content script
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) {
-    chrome.tabs.sendMessage(tab.id, {
-      type: "darkmode_toggle",
-      enabled,
-      brightness,
-    }).catch(() => {});
-  }
+  sendToActiveTab({ type: "darkmode_toggle", enabled, brightness });
 }
 
 darkToggle.addEventListener("change", applyDark);

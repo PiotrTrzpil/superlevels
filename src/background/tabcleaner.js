@@ -1,10 +1,10 @@
 // ═══════════════════════════════════
 //  Tab Cleaner — closes tabs left inactive longer than the timeout
 // ═══════════════════════════════════
+import { DEFAULT_TIMEOUT_MIN } from "../shared/defaults.js";
 import { CLOSED_PAGE_URL, ensureClosedPage, updateClosedTabs } from "./closed-tabs.js";
 import { createQueue } from "./lib.js";
 
-const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // 3 days
 const CHECK_INTERVAL_MIN = 1;
 
 // { tabId: lastActiveTimestamp }

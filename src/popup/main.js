@@ -22,6 +22,7 @@ import { loadUnhook } from "./features/unhook.js";
 import { loadXDim } from "./features/xdim.js";
 import { loadXReply } from "./features/xreply.js";
 import { loadXUnhook } from "./features/xunhook.js";
+import { activeTab } from "./lib/tabs.js";
 
 // ── Navigation ──
 function switchToPage(page) {
@@ -99,8 +100,8 @@ function isFixedSite(url) {
 // Open on the Sites page on a fixed site, else the last open tab — deferred
 // so the default page paints first
 requestAnimationFrame(async () => {
-  const [[tab], data] = await Promise.all([
-    chrome.tabs.query({ active: true, currentWindow: true }),
+  const [tab, data] = await Promise.all([
+    activeTab(),
     chrome.storage.local.get(["last_tab"]),
   ]);
   if (isFixedSite(tab?.url)) switchToPage("sites");

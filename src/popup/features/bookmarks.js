@@ -1,21 +1,26 @@
 // ═══════════════════════════════════
 //  Bookmark Bridge
 // ═══════════════════════════════════
+import { featureToggle } from "../lib/toggle.js";
 
-const bookmarksToggle = document.getElementById("bookmarksToggle");
-const bookmarksStatus = document.getElementById("bookmarksStatus");
 const bookmarksConn = document.getElementById("bookmarksConn");
 const bookmarksBatches = document.getElementById("bookmarksBatches");
 const bookmarksNote = document.getElementById("bookmarksNote");
 const BOOKMARK_OP_LABELS = { create: "added", move: "moved", update: "renamed", remove: "removed" };
 
+const loadBridgeToggle = featureToggle({
+  key: "bookmarks_bridge_enabled",
+  defaultOn: false,
+  toggle: document.getElementById("bookmarksToggle"),
+  status: document.getElementById("bookmarksStatus"),
+  // Give the background a moment to connect before showing the status
+  onChange: () => setTimeout(loadBookmarkBridge, 500),
+});
+
 export async function loadBookmarkBridge() {
-  const data = await chrome.storage.local.get(["bookmarks_bridge_enabled", "bookmarks_batches"]);
-  const enabled = !!data.bookmarks_bridge_enabled;
-  bookmarksToggle.checked = enabled;
-  bookmarksStatus.textContent = enabled ? "ON" : "OFF";
-  bookmarksStatus.className = "status " + (enabled ? "on" : "off");
-  renderBookmarkBatches(data.bookmarks_batches || []);
+  const enabled = await loadBridgeToggle();
+  const { bookmarks_batches = [] } = await chrome.storage.local.get(["bookmarks_batches"]);
+  renderBookmarkBatches(bookmarks_batches);
   if (!enabled) {
     bookmarksConn.textContent = "Off: no host runs, and no program on this computer can change your bookmarks.";
     return;
@@ -62,12 +67,6 @@ async function undoBookmarkBatch() {
   bookmarksNote.textContent = result?.error ? `Undo failed: ${result.error}` : "Undone.";
   loadBookmarkBridge();
 }
-
-bookmarksToggle.addEventListener("change", async () => {
-  await chrome.storage.local.set({ bookmarks_bridge_enabled: bookmarksToggle.checked });
-  // Give the background a moment to connect before showing the status
-  setTimeout(loadBookmarkBridge, 500);
-});
 
 document.querySelectorAll("[data-bookmark-view]").forEach((btn) => {
   btn.addEventListener("click", () => {

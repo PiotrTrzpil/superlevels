@@ -2,6 +2,7 @@
 //  AI Summarize
 // ═══════════════════════════════════
 import { esc } from "../lib/dom.js";
+import { activeTab } from "../lib/tabs.js";
 
 const AI_PROVIDERS = {
   openai: {
@@ -119,7 +120,7 @@ summarizeBtn.addEventListener("click", async () => {
   showAiResult(`<span class="ai-spin">Reading page…</span>`);
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = await activeTab();
     if (!tab || /^(chrome|edge|about|chrome-extension):/.test(tab.url || "")) {
       throw new Error("Can't read this page. Open a normal website tab.");
     }

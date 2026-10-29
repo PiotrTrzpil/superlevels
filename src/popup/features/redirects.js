@@ -2,12 +2,13 @@
 //  Redirect Tracer
 // ═══════════════════════════════════
 import { esc } from "../lib/dom.js";
+import { activeTab } from "../lib/tabs.js";
 
 const redirectChainEl = document.getElementById("redirectChain");
 let lastRedirectText = "";
 
 export async function loadRedirects() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   if (!tab) {
     redirectChainEl.innerHTML = '<div class="redirect-empty"><div class="big-icon">🔀</div><p>No active tab</p></div>';
     return;
@@ -27,7 +28,7 @@ export async function loadRedirects() {
 
   let html = "";
   let text = "";
-  chain.forEach((hop, i) => {
+  chain.forEach((hop) => {
     const label = getRedirectLabel(hop.statusCode);
     html += renderStep(hop.url, hop.statusCode, false, true);
     text += `${hop.url}\n${hop.statusCode}: ${label} to ${hop.redirectUrl}\n\n`;

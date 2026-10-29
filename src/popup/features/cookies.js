@@ -2,24 +2,23 @@
 //  Cookie Editor
 // ═══════════════════════════════════
 import { esc, escA } from "../lib/dom.js";
+import { activeTab } from "../lib/tabs.js";
 
 const cookieDomainEl = document.getElementById("cookieDomain");
 const cookieCountEl = document.getElementById("cookieCount");
 const cookieListEl = document.getElementById("cookieList");
 
-let currentUrl = "";
 let currentDomain = "";
 let allCookies = [];
 
 export async function loadCookies() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   if (!tab || !tab.url) {
     cookieDomainEl.textContent = "No accessible page";
     cookieCountEl.textContent = "0";
     cookieListEl.innerHTML = '<div class="empty">Cannot read cookies from this page</div>';
     return;
   }
-  currentUrl = tab.url;
   try {
     currentDomain = new URL(tab.url).hostname;
   } catch {

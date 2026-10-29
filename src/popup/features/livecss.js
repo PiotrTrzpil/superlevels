@@ -1,6 +1,7 @@
 // ═══════════════════════════════════
 //  Live CSS Editor
 // ═══════════════════════════════════
+import { activeTab, sendToActiveTab } from "../lib/tabs.js";
 
 const livecssHostEl = document.getElementById("livecssHost");
 const livecssEditor = document.getElementById("livecssEditor");
@@ -10,7 +11,7 @@ const livecssClear = document.getElementById("livecssClear");
 let livecssHost = "";
 
 export async function loadLiveCSS() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   if (!tab || !tab.url) return;
 
   try { livecssHost = new URL(tab.url).hostname; } catch { livecssHost = ""; }
@@ -22,11 +23,8 @@ export async function loadLiveCSS() {
 }
 
 // Live preview as user types
-livecssEditor.addEventListener("input", async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) {
-    chrome.tabs.sendMessage(tab.id, { type: "livecss_update", css: livecssEditor.value }).catch(() => {});
-  }
+livecssEditor.addEventListener("input", () => {
+  sendToActiveTab({ type: "livecss_update", css: livecssEditor.value });
 });
 
 // Allow Tab key to insert spaces in textarea
@@ -52,8 +50,5 @@ livecssClear.addEventListener("click", async () => {
   livecssEditor.value = "";
   const key = "livecss_" + livecssHost;
   await chrome.storage.local.remove(key);
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) {
-    chrome.tabs.sendMessage(tab.id, { type: "livecss_update", css: "" }).catch(() => {});
-  }
+  sendToActiveTab({ type: "livecss_update", css: "" });
 });

@@ -1,6 +1,8 @@
 // ═══════════════════════════════════
 //  Ad Block
 // ═══════════════════════════════════
+import { activeTab } from "../lib/tabs.js";
+import { showStatus } from "../lib/toggle.js";
 
 const adblockToggle = document.getElementById("adblockToggle");
 const adblockStatus = document.getElementById("adblockStatus");
@@ -12,7 +14,7 @@ const adblockExtras = document.getElementById("adblockExtras");
 let adblockHost = "";
 
 export async function loadAdblock() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   adblockHost = "";
   try {
     const url = new URL(tab?.url);
@@ -35,7 +37,7 @@ export async function loadAdblock() {
     ? `Lists built ${new Date(meta.builtAt).toLocaleDateString()}: ${meta.rules.toLocaleString()} rules.`
     : "Not set up. Ad Block is optional: build the filter lists with pnpm build:adblock in the extension folder, then reload the extension.";
   renderAdblockExtras(meta?.extras || [], data.adblock_extras || []);
-  if (meta) updateAdblockUI(enabled);
+  if (meta) showStatus(adblockStatus, enabled);
   else {
     adblockStatus.textContent = "NOT BUILT";
     adblockStatus.className = "status off";
@@ -75,14 +77,9 @@ function renderAdblockExtras(extras, enabledIds) {
   }
 }
 
-function updateAdblockUI(on) {
-  adblockStatus.textContent = on ? "ON" : "OFF";
-  adblockStatus.className = "status " + (on ? "on" : "off");
-}
-
 adblockToggle.addEventListener("change", () => {
   const enabled = adblockToggle.checked;
-  updateAdblockUI(enabled);
+  showStatus(adblockStatus, enabled);
   chrome.storage.local.set({ adblock_enabled: enabled });
 });
 
@@ -94,6 +91,6 @@ adblockPause.addEventListener("change", async () => {
   await chrome.storage.local.set({ adblock_paused: adblockPause.checked ? [...rest, adblockHost] : rest });
   // Wait until the background has swapped the rules, then reload to apply
   await chrome.runtime.sendMessage({ type: "adblockSync" });
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activeTab();
   if (tab) chrome.tabs.reload(tab.id);
 });

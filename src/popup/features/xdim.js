@@ -1,9 +1,9 @@
 // ═══════════════════════════════════
 //  X Dim Mode
 // ═══════════════════════════════════
+import { sendToActiveTab } from "../lib/tabs.js";
+import { featureToggle } from "../lib/toggle.js";
 
-const xdimToggle = document.getElementById("xdimToggle");
-const xdimStatus = document.getElementById("xdimStatus");
 const xdimPreview = document.getElementById("xdimPreview");
 const xdimHueSlider = document.getElementById("xdimHueSlider");
 const xdimHueVal = document.getElementById("xdimHueVal");
@@ -22,24 +22,25 @@ const XDIM_THEMES = {
 let xdimTheme = "dim";
 let xdimCustomHue = 210;
 
+const loadXDimToggle = featureToggle({
+  key: "xdim_enabled",
+  defaultOn: false,
+  toggle: document.getElementById("xdimToggle"),
+  status: document.getElementById("xdimStatus"),
+  onChange: (enabled) => sendToActiveTab({ type: "xdim_toggle", enabled }),
+});
+
 export async function loadXDim() {
-  const data = await chrome.storage.local.get(["xdim_enabled", "xdim_theme", "xdim_customHue"]);
-  const enabled = data.xdim_enabled || false;
+  await loadXDimToggle();
+  const data = await chrome.storage.local.get(["xdim_theme", "xdim_customHue"]);
   xdimTheme = data.xdim_theme ?? "dim";
   xdimCustomHue = data.xdim_customHue ?? 210;
 
-  xdimToggle.checked = enabled;
   xdimHueSlider.value = xdimCustomHue;
   xdimHueVal.textContent = xdimCustomHue + "°";
 
-  updateXDimStatus(enabled);
   updateXDimThemeDots();
   updateXDimPreview();
-}
-
-function updateXDimStatus(on) {
-  xdimStatus.textContent = on ? "ON" : "OFF";
-  xdimStatus.className = "status " + (on ? "on" : "off");
 }
 
 function updateXDimThemeDots() {
@@ -65,17 +66,6 @@ function updateXDimPreview() {
   tweet.style.color = `hsl(${h}, ${Math.round(s * 0.32)}%, 60%)`;
   tweet.style.borderColor = `hsl(${h}, ${bSat}%, 26%)`;
 }
-
-xdimToggle.addEventListener("change", async () => {
-  const enabled = xdimToggle.checked;
-  updateXDimStatus(enabled);
-  await chrome.storage.local.set({ xdim_enabled: enabled });
-
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) {
-    chrome.tabs.sendMessage(tab.id, { type: "xdim_toggle", enabled }).catch(() => {});
-  }
-});
 
 xdimDots.forEach((dot) => {
   dot.addEventListener("click", async () => {

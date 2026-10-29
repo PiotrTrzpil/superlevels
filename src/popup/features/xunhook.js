@@ -1,29 +1,12 @@
 // ═══════════════════════════════════
 //  X Unhook
 // ═══════════════════════════════════
+import { sendToActiveTab } from "../lib/tabs.js";
+import { featureToggle } from "../lib/toggle.js";
 
-const xunhookToggle = document.getElementById("xunhookToggle");
-const xunhookStatus = document.getElementById("xunhookStatus");
-
-export async function loadXUnhook() {
-  const data = await chrome.storage.local.get(["xunhook_enabled"]);
-  const enabled = data.xunhook_enabled !== false;
-  xunhookToggle.checked = enabled;
-  updateXUnhookUI(enabled);
-}
-
-function updateXUnhookUI(on) {
-  xunhookStatus.textContent = on ? "ON" : "OFF";
-  xunhookStatus.className = "status " + (on ? "on" : "off");
-}
-
-xunhookToggle.addEventListener("change", async () => {
-  const enabled = xunhookToggle.checked;
-  updateXUnhookUI(enabled);
-  await chrome.storage.local.set({ xunhook_enabled: enabled });
-
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) {
-    chrome.tabs.sendMessage(tab.id, { type: "xunhook_toggle", enabled }).catch(() => {});
-  }
+export const loadXUnhook = featureToggle({
+  key: "xunhook_enabled",
+  toggle: document.getElementById("xunhookToggle"),
+  status: document.getElementById("xunhookStatus"),
+  onChange: (enabled) => sendToActiveTab({ type: "xunhook_toggle", enabled }),
 });

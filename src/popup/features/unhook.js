@@ -1,9 +1,9 @@
 // ═══════════════════════════════════
 //  YouTube Unhook
 // ═══════════════════════════════════
+import { sendToActiveTab } from "../lib/tabs.js";
+import { featureToggle } from "../lib/toggle.js";
 
-const unhookToggle = document.getElementById("unhookToggle");
-const unhookStatus = document.getElementById("unhookStatus");
 const unhookFeatureEls = document.querySelectorAll("#unhookFeatures .unhook-feature");
 const UNHOOK_FEATURE_DEFAULTS = { homepage: true, sidebar: true, endscreen: true, shorts: true, wider: true };
 
@@ -12,38 +12,27 @@ async function getUnhookFeatures() {
   return { ...UNHOOK_FEATURE_DEFAULTS, ...(data.unhook_features || {}) };
 }
 
+const loadUnhookToggle = featureToggle({
+  key: "unhook_enabled",
+  toggle: document.getElementById("unhookToggle"),
+  status: document.getElementById("unhookStatus"),
+  onChange: pushUnhookState,
+});
+
 export async function loadUnhook() {
-  const data = await chrome.storage.local.get(["unhook_enabled"]);
-  const enabled = data.unhook_enabled !== false;
-  unhookToggle.checked = enabled;
-  updateUnhookUI(enabled);
+  await loadUnhookToggle();
   const features = await getUnhookFeatures();
   unhookFeatureEls.forEach((el) => {
     el.classList.toggle("off", features[el.dataset.feature] === false);
   });
 }
 
-function updateUnhookUI(on) {
-  unhookStatus.textContent = on ? "ON" : "OFF";
-  unhookStatus.className = "status " + (on ? "on" : "off");
-}
-
 async function pushUnhookState() {
   const data = await chrome.storage.local.get(["unhook_enabled"]);
   const enabled = data.unhook_enabled !== false;
   const features = await getUnhookFeatures();
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) {
-    chrome.tabs.sendMessage(tab.id, { type: "unhook_toggle", enabled, features }).catch(() => {});
-  }
+  await sendToActiveTab({ type: "unhook_toggle", enabled, features });
 }
-
-unhookToggle.addEventListener("change", async () => {
-  const enabled = unhookToggle.checked;
-  updateUnhookUI(enabled);
-  await chrome.storage.local.set({ unhook_enabled: enabled });
-  await pushUnhookState();
-});
 
 unhookFeatureEls.forEach((el) => {
   el.addEventListener("click", async () => {
