@@ -16,16 +16,16 @@
 //  $csp, $removeparam, popups — are skipped, as are scriptlets (+js) and
 //  procedural cosmetic filters (#?#).
 //
-//  Usage: node adblock/build.mjs [easylist.txt easyprivacy.txt]
+//  Usage: node scripts/build-adblock.mjs [easylist.txt easyprivacy.txt]
 //  With no arguments every list (core and extras) is downloaded. With list
 //  files as arguments, only the core lists are built, from those files.
 // ═══════════════════════════════════
 import { createHash } from "node:crypto";
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const OUT_DIR = dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "../data/adblock");
 const LISTS = [
   "https://easylist.to/easylist/easylist.txt",
   "https://easylist.to/easylist/easyprivacy.txt",
@@ -365,6 +365,7 @@ files["meta.json"] = JSON.stringify({
 
 // Write everything to temp files first, so an interrupted build can't
 // leave a mix of old and new outputs
+await mkdir(OUT_DIR, { recursive: true });
 for (const [name, text] of Object.entries(files)) await writeFile(join(OUT_DIR, name + ".tmp"), text);
 for (const name of Object.keys(files)) await rename(join(OUT_DIR, name + ".tmp"), join(OUT_DIR, name));
 console.log(`${total} rules with every list on (budget ${MAX_RULES})`);

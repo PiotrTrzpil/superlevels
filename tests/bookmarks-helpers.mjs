@@ -8,7 +8,7 @@ import { launchExtension } from "./extension.mjs";
 export async function openBookmarks(view = "", options = {}) {
   const ext = await launchExtension(options);
   const page = await ext.context.newPage();
-  await page.goto(`chrome-extension://${ext.extensionId}/bookmarks.html#${view}`);
+  await page.goto(`chrome-extension://${ext.extensionId}/src/pages/bookmarks/bookmarks.html#${view}`);
   await page.waitForFunction(() => typeof BM !== "undefined");
   return { ...ext, page };
 }

@@ -12,7 +12,7 @@ import { chromium } from "playwright-core";
 import { EXT_DIR } from "./extension.mjs";
 
 const SKIP = new Set(["node_modules", ".git", "tests", ".playwright-mcp"]);
-const GENERATED = /^adblock\/.*\.(json|css|tmp)$/;
+const GENERATED = /^data\/adblock\//;
 
 let dir, context, worker;
 
@@ -53,7 +53,7 @@ test("popup Ads page explains the setup", async () => {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
+  await page.goto(`chrome-extension://${new URL(worker.url()).host}/src/popup/popup.html`);
   await page.waitForLoadState("load");
   await page.waitForTimeout(300); // popup restores the last-open page on load
   await page.click('.nav button[data-group="privacy"]');

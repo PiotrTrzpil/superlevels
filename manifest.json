@@ -6,44 +6,44 @@
   "permissions": ["tabs", "storage", "alarms", "cookies", "activeTab", "webRequest", "webNavigation", "tabCapture", "contentSettings", "scripting", "bookmarks", "nativeMessaging", "favicon", "declarativeNetRequest", "idle"],
   "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background/background.js"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/popup.html",
     "default_title": "🚀 superlevels"
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],
-    "js": ["darkmode.js", "nocookie.js", "livecss.js"],
+    "js": ["src/content/darkmode.js", "src/content/nocookie.js", "src/content/livecss.js"],
     "run_at": "document_start"
   }, {
     "matches": ["<all_urls>"],
-    "js": ["jsonformat.js"],
+    "js": ["src/content/jsonformat.js"],
     "run_at": "document_end"
   }, {
     "matches": ["*://www.youtube.com/*", "*://m.youtube.com/*"],
-    "js": ["unhook.js"],
+    "js": ["src/content/youtube/unhook.js"],
     "run_at": "document_start"
   }, {
     "matches": ["*://x.com/*", "*://twitter.com/*", "*://mobile.x.com/*", "*://mobile.twitter.com/*"],
-    "js": ["xdim.js", "xunhook.js", "xreply.js"],
+    "js": ["src/content/x/xdim.js", "src/content/x/xunhook.js", "src/content/x/xreply.js"],
     "run_at": "document_start"
   }, {
     "matches": ["*://www.photopea.com/*", "*://photopea.com/*"],
-    "js": ["photopea.js"],
+    "js": ["src/content/photopea/photopea.js"],
     "run_at": "document_start"
   }, {
     "matches": ["*://www.google.com/*", "*://www.google.co.uk/*", "*://www.google.co.jp/*", "*://www.google.co.in/*", "*://www.google.co.kr/*", "*://www.google.co.id/*", "*://www.google.com.br/*", "*://www.google.com.au/*", "*://www.google.com.mx/*", "*://www.google.de/*", "*://www.google.fr/*", "*://www.google.es/*", "*://www.google.it/*", "*://www.google.nl/*", "*://www.google.pt/*", "*://www.google.pl/*", "*://www.google.se/*", "*://www.google.ca/*", "*://www.google.ru/*"],
-    "js": ["gmaps.js"],
+    "js": ["src/content/google/gmaps.js"],
     "run_at": "document_end"
   }, {
     "matches": ["*://www.google.com/*", "*://www.google.co.uk/*", "*://www.google.co.jp/*", "*://www.google.co.in/*", "*://www.google.co.kr/*", "*://www.google.co.id/*", "*://www.google.com.br/*", "*://www.google.com.au/*", "*://www.google.com.mx/*", "*://www.google.de/*", "*://www.google.fr/*", "*://www.google.es/*", "*://www.google.it/*", "*://www.google.nl/*", "*://www.google.pt/*", "*://www.google.pl/*", "*://www.google.se/*", "*://www.google.ca/*", "*://www.google.ru/*"],
-    "js": ["viewimage.js"],
+    "js": ["src/content/google/viewimage.js"],
     "run_at": "document_end"
   }],
   "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
   }
 }

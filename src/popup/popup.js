@@ -695,8 +695,8 @@ async function loadAdblock() {
 
   const [data, meta] = await Promise.all([
     chrome.storage.local.get(["adblock_enabled", "adblock_paused", "adblock_extras"]),
-    // Written by adblock/build.mjs; missing until the lists are built
-    fetch("adblock/meta.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    // Written by scripts/build-adblock.mjs; missing until the lists are built
+    fetch("/data/adblock/meta.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
   const enabled = data.adblock_enabled !== false;
   const paused = data.adblock_paused || [];
@@ -1247,7 +1247,7 @@ bookmarksToggle.addEventListener("change", async () => {
 
 document.querySelectorAll("[data-bookmark-view]").forEach((btn) => {
   btn.addEventListener("click", () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL(`bookmarks.html#${btn.dataset.bookmarkView}`) });
+    chrome.tabs.create({ url: chrome.runtime.getURL(`src/pages/bookmarks/bookmarks.html#${btn.dataset.bookmarkView}`) });
   });
 });
 

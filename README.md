@@ -12,7 +12,7 @@ Most Chrome extensions are closed-source malware/spyware-filled garbage that for
 
 ## Demo
 
-![SuperLevels Demo](demo.gif)
+![SuperLevels Demo](assets/demo.gif)
 
 ## Security
 
@@ -67,7 +67,7 @@ Blocks ad and tracker requests and hides the empty ad slots they leave behind, l
 ### 👁 Trackers
 Shows which third parties the current page talks to: each tracker's name, company and category (advertising, analytics, social media…), how many requests it made, and whether they were blocked, like the old Ghostery. Block a single tracker, an unknown host, or a whole category (advertising, analytics, social, chat widgets…) everywhere with one switch. Categories that break sites when blocked (CDNs, video players, "essential") can only be blocked one tracker at a time. Requests are only observed, and the log stays in your browser.
 
-Names and categories come from the [WhoTracks.Me](https://whotracks.me) database (via [AdGuard companiesdb](https://github.com/AdguardTeam/companiesdb)). It's optional too: without it, the panel lists bare hostnames. Build it with `node trackers/build.mjs` (see [Install](#install), step 7).
+Names and categories come from the [WhoTracks.Me](https://whotracks.me) database (via [AdGuard companiesdb](https://github.com/AdguardTeam/companiesdb)). It's optional too: without it, the panel lists bare hostnames. Build it with `node scripts/build-trackers.mjs` (see [Install](#install), step 7).
 
 ### 🗄 No Paywall
 Opens paywalled news articles straight on [archive.is](https://archive.is) — e.g. an nytimes.com article goes to `archive.is/https://www.nytimes.com/...`. Only article URLs redirect (homepages and section fronts don't), tracking params are stripped so existing snapshots match, and links clicked from an archive page open the original. The site list (NYT, WSJ, FT, Bloomberg, Economist, plus Dutch, German, French, Italian, Spanish and Nordic papers like NRC, Volkskrant, Spiegel, Zeit, Le Monde, Corriere, El País) is editable in the popup.
@@ -128,7 +128,7 @@ The host sends requests `{id, method, params}`. The extension answers `{id, resu
 
 A `create`'s `ref` can be used as `id` or `parentId` by later ops in the same request. `created` maps each ref to its new id. `remove` refuses a folder that isn't empty, so remove its contents first. Requests that share a `batch` id appear as one entry in the popup and are undone together. `label` names that entry.
 
-Messages to the extension are limited to 1 MB, so split large changes into several requests with the same `batch`. Code: `bookmarkbridge.js`.
+Messages to the extension are limited to 1 MB, so split large changes into several requests with the same `batch`. Code: `src/background/bookmarkbridge.js`.
 </details>
 
 ## Install
@@ -141,29 +141,29 @@ Messages to the extension are limited to 1 MB, so split large changes into sever
 6. Select the `superlevels` folder
 7. *Optional, for Ad Block:* with [Node.js](https://nodejs.org) 18 or newer, run this in the `superlevels` folder, then click the reload icon on the extension in `chrome://extensions/`:
    ```sh
-   node adblock/build.mjs
+   node scripts/build-adblock.mjs
    ```
-   This downloads EasyList, EasyPrivacy and the optional extra lists and compiles them into `adblock/`. It needs no `pnpm install`. Run it again whenever you want fresher lists. *For tracker names in the 👁 Trackers panel*, also run `node trackers/build.mjs`.
+   This downloads EasyList, EasyPrivacy and the optional extra lists and compiles them into `data/adblock/`. It needs no `pnpm install`. Run it again whenever you want fresher lists. *For tracker names in the 👁 Trackers panel*, also run `node scripts/build-trackers.mjs`.
 8. The 🚀 icon appears in your toolbar — you're done!
 
 ## Development
 
-The only build steps are the optional Ad Block lists and tracker database. Their outputs (`adblock/*.json`, `adblock/*.css`, `trackers/*.json`) are gitignored.
+The only build steps are the optional Ad Block lists and tracker database. Their outputs (everything under `data/`) are gitignored.
 
-**Build the ad block lists.** This writes `adblock/rules.json`, `adblock/generic.css`, `adblock/cosmetic.json`, the same three as `adblock/extra-<list>.*` for each extra list, and `adblock/meta.json`:
+**Build the ad block lists.** This writes `data/adblock/rules.json`, `data/adblock/generic.css`, `data/adblock/cosmetic.json`, the same three as `data/adblock/extra-<list>.*` for each extra list, and `data/adblock/meta.json`:
 
 ```sh
-pnpm build:adblock                                    # download fresh lists, extras included
-node adblock/build.mjs easylist.txt easyprivacy.txt   # or core lists only, from local copies
+pnpm build:adblock                                            # download fresh lists, extras included
+node scripts/build-adblock.mjs easylist.txt easyprivacy.txt   # or core lists only, from local copies
 ```
 
 Every list can be on at once, so the build also fails if all of them together would exceed the 29,000-rule budget. The tracker panel's block rules use dynamic rule ids 100,000–109,999. Ad Block owns the ids below that.
 
-**Build the tracker database.** This writes `trackers/db.json`:
+**Build the tracker database.** This writes `data/trackers/db.json`:
 
 ```sh
-pnpm build:trackers                                   # download from AdGuard companiesdb
-node trackers/build.mjs trackers.json companies.json  # or use local copies
+pnpm build:trackers                                           # download from AdGuard companiesdb
+node scripts/build-trackers.mjs trackers.json companies.json  # or use local copies
 ```
 
 The build fails and writes nothing if a download fails, if any rule wouldn't be valid for Chrome, or if the lists look too small. It writes all files at once, so an interrupted build can't leave a mix of old and new. `meta.json` marks a finished build, and the extension turns Ad Block on only when that file exists. The rules are loaded as dynamic `declarativeNetRequest` rules, because a static ruleset in the manifest whose file is missing would stop the whole extension from loading. Then reload the extension in `chrome://extensions` and run the tests.

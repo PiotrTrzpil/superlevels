@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ═══════════════════════════════════
 //  superlevels: tracker database for the Trackers panel
-//  Builds trackers/db.json (domain → tracker → company + category) from
+//  Builds data/trackers/db.json (domain → tracker → company + category) from
 //  AdGuard's companiesdb, which converts the WhoTracks.Me database to JSON.
 //  Licence: CC BY-SA 4.0 (WhoTracks.Me data: CC BY 4.0). That's why the
 //  output isn't committed and is credited in the panel; the panel still
@@ -9,14 +9,14 @@
 //  (Ghostery's TrackerDB, DuckDuckGo Tracker Radar and Disconnect are all
 //  CC BY-NC-SA, i.e. no commercial use, so they're not used.)
 //
-//  Usage: node trackers/build.mjs [trackers.json companies.json]
+//  Usage: node scripts/build-trackers.mjs [trackers.json companies.json]
 //  With no arguments both files are downloaded from GitHub.
 // ═══════════════════════════════════
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), "db.json");
+const OUT = join(dirname(fileURLToPath(import.meta.url)), "../data/trackers/db.json");
 const BASE = "https://raw.githubusercontent.com/AdguardTeam/companiesdb/main/dist/";
 const SOURCES = ["trackers.json", "companies.json"];
 // Far fewer means a download went wrong
@@ -54,6 +54,7 @@ const db = {
   trackers,
   domains,
 };
+await mkdir(dirname(OUT), { recursive: true });
 await writeFile(OUT + ".tmp", JSON.stringify(db) + "\n");
 await rename(OUT + ".tmp", OUT);
-console.log(`trackers/db.json  ${Object.keys(trackers).length} trackers, ${Object.keys(domains).length} domains`);
+console.log(`data/trackers/db.json  ${Object.keys(trackers).length} trackers, ${Object.keys(domains).length} domains`);

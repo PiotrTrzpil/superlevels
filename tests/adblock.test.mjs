@@ -41,7 +41,7 @@ ${Object.values(ELEMENTS).map((id) => `<div id="${id}">${id}</div>`).join("\n")}
 <script src="https://code.jquery.com/jquery.js"></script>
 </body></html>`;
 
-const built = existsSync(join(EXT_DIR, "adblock/meta.json"));
+const built = existsSync(join(EXT_DIR, "data/adblock/meta.json"));
 
 describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock" }, () => {
   let ext;
@@ -80,7 +80,7 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
   }
 
   test("Chrome accepted the list rules", async () => {
-    const rules = JSON.parse(await readFile(join(EXT_DIR, "adblock/rules.json"), "utf8"));
+    const rules = JSON.parse(await readFile(join(EXT_DIR, "data/adblock/rules.json"), "utf8"));
     const loaded = await ext.worker.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).filter((r) => r.id < 100_000).length);
     assert.equal(loaded, rules.length);
 
@@ -150,7 +150,7 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
   });
 
   test("extra lists switch on and off", async (t) => {
-    const meta = JSON.parse(await readFile(join(EXT_DIR, "adblock/meta.json"), "utf8"));
+    const meta = JSON.parse(await readFile(join(EXT_DIR, "data/adblock/meta.json"), "utf8"));
     if (!meta.extras?.length) return t.skip("built without extra lists");
     const ids = meta.extras.map((e) => e.id);
     const ruleCount = () => ext.worker.evaluate(async () =>
@@ -158,8 +158,8 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
 
     // A merged-domain rule and a plain id/class selector from each list
     const samples = await Promise.all(ids.map(async (id) => {
-      const rules = JSON.parse(await readFile(join(EXT_DIR, `adblock/extra-${id}.rules.json`), "utf8"));
-      const css = await readFile(join(EXT_DIR, `adblock/extra-${id}.css`), "utf8");
+      const rules = JSON.parse(await readFile(join(EXT_DIR, `data/adblock/extra-${id}.rules.json`), "utf8"));
+      const css = await readFile(join(EXT_DIR, `data/adblock/extra-${id}.css`), "utf8");
       const candidates = rules.find((r) => r.condition.requestDomains)?.condition.requestDomains.slice(0, 20) ?? [];
       const selector = css.match(/^([#.][A-Za-z][\w-]*)\{/m)?.[1];
       return { id, candidates, selector };
@@ -206,7 +206,7 @@ describe("Ad Block", { skip: !built && "lists not built: run pnpm build:adblock"
     const page = await ext.context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto(`chrome-extension://${ext.extensionId}/popup.html`);
+    await page.goto(`chrome-extension://${ext.extensionId}/src/popup/popup.html`);
     await page.waitForLoadState("load");
     await page.waitForTimeout(300); // popup restores the last-open page on load
     await page.click('.nav button[data-group="privacy"]');

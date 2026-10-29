@@ -2,7 +2,7 @@ importScripts("bookmarkbridge.js", "trackers.js");
 
 const DEFAULT_TIMEOUT_MIN = 3 * 24 * 60; // 3 days
 const CHECK_INTERVAL_MIN = 1;
-const CLOSED_PAGE_URL = chrome.runtime.getURL("closed.html");
+const CLOSED_PAGE_URL = chrome.runtime.getURL("src/pages/closed/closed.html");
 const MAX_CLOSED_TABS = 2000;
 
 // { tabId: lastActiveTimestamp }
@@ -449,6 +449,7 @@ chrome.runtime.onInstalled.addListener(() => {
 //  (must run in the page world before Photopea's own scripts)
 // ═══════════════════════════════════
 const PHOTOPEA_SCRIPT_ID = "sl-photopea-main";
+const PHOTOPEA_SCRIPT_FILE = "src/content/photopea/photopea-main.js";
 
 let photopeaSyncChain = Promise.resolve();
 function syncPhotopeaScript() {
@@ -460,12 +461,17 @@ function syncPhotopeaScript() {
 async function doSyncPhotopeaScript() {
   const { photopea_enabled } = await chrome.storage.local.get(["photopea_enabled"]);
   const enabled = photopea_enabled !== false;
-  const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [PHOTOPEA_SCRIPT_ID] });
+  let existing = await chrome.scripting.getRegisteredContentScripts({ ids: [PHOTOPEA_SCRIPT_ID] });
+  // Registrations outlive extension updates; drop one left pointing at an older file path
+  if (existing.length > 0 && existing[0].js?.join() !== PHOTOPEA_SCRIPT_FILE) {
+    await chrome.scripting.unregisterContentScripts({ ids: [PHOTOPEA_SCRIPT_ID] }).catch(() => {});
+    existing = [];
+  }
   if (enabled && existing.length === 0) {
     await chrome.scripting.registerContentScripts([{
       id: PHOTOPEA_SCRIPT_ID,
       matches: ["*://www.photopea.com/*", "*://photopea.com/*"],
-      js: ["photopea-main.js"],
+      js: [PHOTOPEA_SCRIPT_FILE],
       runAt: "document_start",
       world: "MAIN",
     }]).catch(() => {});
@@ -560,7 +566,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
 
 // ═══════════════════════════════════
 //  Ad Block — EasyList + EasyPrivacy compiled to declarativeNetRequest
-//  (adblock/build.mjs). Chrome does the network blocking itself; here we
+//  (scripts/build-adblock.mjs). Chrome does the network blocking itself; here we
 //  only load the rules, keep the per-site pause rule, and inject the
 //  element-hiding CSS for ad slots the blocked requests leave behind.
 //  Optional: the lists aren't committed, and until they're built Ad Block
@@ -575,17 +581,17 @@ const ADBLOCK_PAUSE_RULE_ID = 1;
 const ADBLOCK_FIRST_LIST_RULE_ID = 2;
 const ADBLOCK_LAST_LIST_RULE_ID = 99_999;
 
-// adblock/meta.json is written last by the build; null when not built
+// data/adblock/meta.json is written last by the build; null when not built
 let adblockMeta;
 function getAdblockMeta() {
-  adblockMeta ??= fetch(chrome.runtime.getURL("adblock/meta.json"))
+  adblockMeta ??= fetch(chrome.runtime.getURL("data/adblock/meta.json"))
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
   return adblockMeta;
 }
 
 // Output file of the core lists, or of an extra list ("cookies", …)
-const adblockFile = (extra, kind) => `adblock/${extra ? `extra-${extra}.` : ""}${kind}`;
+const adblockFile = (extra, kind) => `data/adblock/${extra ? `extra-${extra}.` : ""}${kind}`;
 const fetchJson = (path) => fetch(chrome.runtime.getURL(path)).then((r) => r.json());
 
 // Cosmetic rules of the core lists merged with the enabled extras, cached

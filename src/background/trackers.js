@@ -1,7 +1,7 @@
 // ═══════════════════════════════════
 //  Trackers panel — which third parties each tab talks to, grouped by
 //  tracker and company, with per-tracker / per-category / per-host blocking.
-//  Names and categories come from trackers/db.json (pnpm build:trackers),
+//  Names and categories come from data/trackers/db.json (pnpm build:trackers),
 //  which is optional: without it the panel lists bare third-party hosts.
 //  Requests are only observed (webRequest can't block in MV3) and the log
 //  never leaves the browser. Blocking uses dynamic rules 100000–109999;
@@ -13,7 +13,7 @@ const TRACKER_DOMAINS_PER_RULE = 1000;
 
 let trackerDb;
 function getTrackerDb() {
-  trackerDb ??= fetch(chrome.runtime.getURL("trackers/db.json"))
+  trackerDb ??= fetch(chrome.runtime.getURL("data/trackers/db.json"))
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
   return trackerDb;

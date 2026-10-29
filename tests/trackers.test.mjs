@@ -2,7 +2,7 @@
 //  Trackers panel: end-to-end test in a real Chromium
 //  Requests are answered by a Playwright route (no real network). Ad Block
 //  is switched off so only the panel's own block rules apply. Name and
-//  category checks need trackers/db.json (pnpm build:trackers).
+//  category checks need data/trackers/db.json (pnpm build:trackers).
 // ═══════════════════════════════════
 import { describe, test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -10,7 +10,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { launchExtension, waitFor, EXT_DIR } from "./extension.mjs";
 
-const hasDb = existsSync(join(EXT_DIR, "trackers/db.json"));
+const hasDb = existsSync(join(EXT_DIR, "data/trackers/db.json"));
 const needsDb = { skip: !hasDb && "tracker db not built: run pnpm build:trackers" };
 
 const PAGE_URL = "https://news.example.org/article";
@@ -124,7 +124,7 @@ describe("Trackers panel", () => {
     const popup = await ext.context.newPage();
     const errors = [];
     popup.on("pageerror", (e) => errors.push(e.message));
-    await popup.goto(`chrome-extension://${ext.extensionId}/popup.html`);
+    await popup.goto(`chrome-extension://${ext.extensionId}/src/popup/popup.html`);
     await popup.click('.nav button[data-group="privacy"]');
     await popup.click('.subnav button[data-page="trackers"]');
     // The popup's own tab is "active" here, so once its (empty) first render
