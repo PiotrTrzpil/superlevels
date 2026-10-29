@@ -137,26 +137,26 @@
   <!-- ═══ Dark Mode Page ═══ -->
   <div class="page" id="page-darkmode">
     <div class="page-body">
-      <div class="dark-big-toggle">
-        <div class="moon">🌙</div>
-        <label class="big-switch">
-          <input type="checkbox" id="darkToggle">
-          <span class="big-slider"></span>
-        </label>
-        <div class="status off" id="darkStatus">OFF</div>
-      </div>
-      <div class="dark-host" id="darkHost"></div>
-
-      <div class="dark-scope">
-        <button id="scopeSite" class="active">This site only</button>
-        <button id="scopeGlobal">All sites</button>
-      </div>
-
-      <div class="dark-section">
-        <label>Brightness</label>
-        <div class="range-row">
-          <input type="range" id="darkBrightness" min="60" max="120" value="100">
-          <span class="range-val" id="darkBrightnessVal">100%</span>
+      <div class="feat static open" data-feat="darkmode">
+        <div class="feat-head">
+          <span class="feat-icon">🌙</span>
+          <div class="feat-title">Dark mode<div class="opt-desc" id="darkHost"></div></div>
+          <span class="status off" id="darkStatus">OFF</span>
+          <label class="switch"><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+        </div>
+        <div class="feat-body">
+          <div class="dark-scope">
+            <button id="scopeSite" class="active">This site only</button>
+            <button id="scopeGlobal">All sites</button>
+          </div>
+          <div class="dark-section">
+            <label>Brightness</label>
+            <div class="range-row">
+              <input type="range" id="darkBrightness" min="60" max="120" value="100">
+              <span class="range-val" id="darkBrightnessVal">100%</span>
+            </div>
+          </div>
+          <div class="xdim-note">Choose where the switch applies, then switch it. Turn off if a site breaks.</div>
         </div>
       </div>
     </div>
@@ -222,7 +222,7 @@
             <li>Keep search bar at top of sidebar</li>
             <li>Hide Explore in the left nav and the More menu</li>
           </ul>
-          <div class="xdim-note">Toggle off if a page breaks.</div>
+          <div class="xdim-note">Turn off if a site breaks.</div>
         </div>
       </div>
 
@@ -295,22 +295,21 @@
       <button class="open-closed" style="margin-top:6px" data-bookmark-view="deadlinks">🪦 Dead links</button>
       <button class="open-closed" style="margin-top:6px" data-bookmark-view="tidy">🧹 Tidy: duplicates, tracking, empty folders</button>
 
-      <h2 style="margin-top:16px">Local programs (bridge)</h2>
-      <div class="unhook-big-toggle">
-        <div class="yticon">🔌</div>
-        <label class="big-switch">
-          <input type="checkbox" id="bookmarksToggle">
-          <span class="big-slider"></span>
-        </label>
-        <div class="status off" id="bookmarksStatus">OFF</div>
+      <div class="feat static open" data-feat="bookmarks-bridge">
+        <div class="feat-head">
+          <span class="feat-icon">🔌</span>
+          <div class="feat-title">Local programs<div class="opt-desc">Let programs on this computer edit your bookmarks</div></div>
+          <span class="status off" id="bookmarksStatus">OFF</span>
+          <label class="switch"><input type="checkbox" id="bookmarksToggle"><span class="slider"></span></label>
+        </div>
+        <div class="feat-body">
+          <ul class="feat-list">
+            <li>Edits go through Chrome, so Sync keeps the changes</li>
+            <li>Talks only to a native messaging host you installed</li>
+          </ul>
+          <div class="xdim-note" id="bookmarksConn"></div>
+        </div>
       </div>
-
-      <div class="unhook-features">
-        <div class="unhook-feature"><span class="check">✓</span> Programs on this computer edit bookmarks through Chrome, so Sync keeps the changes</div>
-        <div class="unhook-feature"><span class="check">✓</span> Talks only to a native messaging host you installed</div>
-      </div>
-
-      <div class="xdim-note" id="bookmarksConn" style="margin-top:10px"></div>
 
       <h2>Recent changes</h2>
       <div class="exc-list" id="bookmarksBatches"></div>
@@ -363,12 +362,12 @@
           <span class="feat-chev">▶</span>
         </div>
         <div class="feat-body">
-          <div class="nocookie-stats">
-            Hides banners via CSS and auto-clicks accept buttons for common consent frameworks:
-            OneTrust, CookieBot, Didomi, Quantcast, GDPR plugins, and more.
-          </div>
+          <ul class="feat-list">
+            <li>Hides consent banners with CSS</li>
+            <li>Clicks "Accept" for OneTrust, Cookiebot, Didomi, Quantcast, GDPR plugins and more</li>
+          </ul>
           <div id="nocookieList"></div>
-          <div class="xdim-note">Toggle off if a site breaks.</div>
+          <div class="xdim-note">Turn off if a site breaks.</div>
         </div>
       </div>
 
@@ -426,12 +425,12 @@
         <div class="feat-head">
           <span class="feat-icon">⚡</span>
           <div class="feat-title">JavaScript<div class="opt-desc"><span class="indicator on" id="jsIndicator"></span> <span id="jsHostLabel">Loading...</span></div></div>
-          <span class="status on" id="jsStatus">ENABLED</span>
+          <span class="status on" id="jsStatus">ON</span>
           <label class="switch"><input type="checkbox" id="jsToggle" checked><span class="slider"></span></label>
           <span class="feat-chev">▶</span>
         </div>
         <div class="feat-body">
-          <div class="xdim-note">Disable JavaScript for the current site. The page reloads when toggled.</div>
+          <div class="xdim-note">Switch off to block JavaScript on the current site. The page reloads when you switch.</div>
         </div>
       </div>
 
@@ -444,10 +443,11 @@
           <span class="feat-chev">▶</span>
         </div>
         <div class="feat-body">
-          <div class="nocookie-stats">
-            Detects pure JSON pages and displays them with syntax highlighting,
-            collapsible sections, and a dark theme. Copy or view raw with one click.
-          </div>
+          <ul class="feat-list">
+            <li>Detects pages that are pure JSON</li>
+            <li>Syntax highlighting and collapsible sections</li>
+            <li>Copy it, or view the raw response, with one click</li>
+          </ul>
           <div class="xdim-note">Regular HTML pages are never affected.</div>
         </div>
       </div>
@@ -479,7 +479,7 @@
         </button>
         <div class="listen-timer" id="listenTimer"></div>
         <div class="listen-label" id="listenLabel">Tap to listen</div>
-        <button id="acrSettingsBtn" class="ghost-btn music-settings-btn" title="API Settings">⚙️</button>
+        <button id="acrSettingsBtn" class="ghost-btn">⚙️ ACRCloud keys</button>
       </div>
       <div class="music-result" id="musicResult"></div>
       <div class="music-history" id="musicHistory"></div>
@@ -491,7 +491,7 @@
         <input type="text" id="acrKey" placeholder="your access key" class="field">
         <label>Access Secret</label>
         <input type="password" id="acrSecret" placeholder="your access secret" class="field">
-        <button class="btn-save" id="acrSaveBtn" style="margin-top:4px;padding:6px 14px;font-size:12px;">Save</button>
+        <button class="btn-save btn-small" id="acrSaveBtn">Save</button>
       </div>
     </div>
   </div>
@@ -526,13 +526,12 @@
         <input type="password" id="aiKey" placeholder="paste your key" class="field">
         <label>Model</label>
         <input type="text" id="aiModel" placeholder="model name" class="field">
-        <button class="btn-save" id="aiSaveBtn" style="margin-top:4px;padding:6px 14px;font-size:12px;">Save</button>
+        <button class="btn-save btn-small" id="aiSaveBtn">Save</button>
         <div class="fine-print">Keys are stored locally in your browser and sent only to the provider you pick.</div>
       </div>
 
       <div class="xdim-note" style="margin-top:10px">
-        Reads the visible text of the current tab and<br>
-        summarizes it with your own AI provider key.
+        Reads the visible text of the current tab and summarizes it with your own AI provider key.
       </div>
     </div>
   </div>
@@ -541,7 +540,6 @@
   <div class="page" id="page-pip">
     <div class="page-body">
       <div class="pip-center">
-        <div class="pip-icon">🖼</div>
         <button class="pip-btn" id="pipBtn">
           <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
@@ -553,8 +551,7 @@
         <div class="pip-status" id="pipStatus"></div>
       </div>
       <div class="xdim-note" style="margin-top:10px">
-        Pops the largest video on the current tab<br>
-        into a floating window. Click again to exit.
+        Pops the largest video on the current tab into a floating window. Click again to exit.
       </div>
     </div>
   </div>

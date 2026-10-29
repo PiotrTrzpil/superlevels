@@ -2,6 +2,7 @@
 //  JavaScript Toggle
 // ═══════════════════════════════════
 import { activeTab } from "../lib/tabs.js";
+import { showStatus } from "../lib/toggle.js";
 
 const jsToggle = document.getElementById("jsToggle");
 const jsStatus = document.getElementById("jsStatus");
@@ -20,6 +21,9 @@ export async function loadJsToggle() {
     jsHost = /^https?:$/.test(url.protocol) ? url.hostname : "";
   } catch { jsHost = ""; }
   jsHostLabel.textContent = jsHost || "No accessible page";
+  jsToggle.disabled = !jsHost;
+  jsIndicator.style.display = jsHost ? "" : "none";
+  jsStatus.style.display = jsHost ? "" : "none";
 
   if (!jsHost) return;
 
@@ -32,8 +36,7 @@ export async function loadJsToggle() {
 }
 
 function updateJsUI(enabled) {
-  jsStatus.textContent = enabled ? "ENABLED" : "DISABLED";
-  jsStatus.className = "status " + (enabled ? "on" : "off");
+  showStatus(jsStatus, enabled);
   jsIndicator.className = "indicator " + (enabled ? "on" : "off");
 }
 

@@ -57,6 +57,9 @@ function togglePictureInPicture() {
 }
 
 handle("pip", async ({ tabId }) => {
-  const results = await chrome.scripting.executeScript({ target: { tabId }, func: togglePictureInPicture });
+  // Chrome refuses to run scripts on chrome://, the Web Store, extension pages…
+  const results = await chrome.scripting.executeScript({ target: { tabId }, func: togglePictureInPicture })
+    .catch(() => null);
+  if (!results) return { error: "Picture-in-Picture doesn't work on this page" };
   return results[0]?.result || { error: "No result" };
 });

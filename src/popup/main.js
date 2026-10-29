@@ -76,8 +76,9 @@ document.querySelectorAll(".subnav button").forEach((btn) => {
 });
 
 // Feature rows: clicking the row (not its switch) shows its details;
-// which rows are open is remembered across popup opens
-const feats = document.querySelectorAll(".feat");
+// which rows are open is remembered across popup opens. A page's only
+// feature (.static) stays open.
+const feats = document.querySelectorAll(".feat:not(.static)");
 feats.forEach((feat) => {
   feat.querySelector(".feat-head").addEventListener("click", (e) => {
     if (e.target.closest(".switch")) return;

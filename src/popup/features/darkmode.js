@@ -19,8 +19,12 @@ export async function loadDarkMode() {
   const tab = await activeTab();
   if (!tab || !tab.url) return;
 
-  try { darkHost = new URL(tab.url).hostname; } catch { darkHost = ""; }
-  darkHostEl.textContent = darkHost ? `Current site: ${darkHost}` : "";
+  // Only web pages can be darkened (not chrome://, the new tab page, etc.)
+  try {
+    const url = new URL(tab.url);
+    darkHost = /^https?:$/.test(url.protocol) ? url.hostname : "";
+  } catch { darkHost = ""; }
+  darkHostEl.textContent = darkHost ? `Current site: ${darkHost}` : "No accessible page";
 
   const siteKey = "darkmode_" + darkHost;
   const data = await chrome.storage.local.get([siteKey, "darkmode_global", "darkmode_brightness"]);
@@ -38,6 +42,10 @@ export async function loadDarkMode() {
 }
 
 async function applyDark() {
+  if (darkScope === "site" && !darkHost) {
+    darkToggle.checked = !darkToggle.checked;
+    return;
+  }
   const enabled = darkToggle.checked;
   const brightness = parseInt(darkBrightness.value);
   showStatus(darkStatus, enabled);
