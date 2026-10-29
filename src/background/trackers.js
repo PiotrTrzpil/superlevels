@@ -1,6 +1,7 @@
 // ═══════════════════════════════════
 //  Trackers panel — which third parties each tab talks to, grouped by
-//  tracker and company, with per-tracker / per-category / per-host blocking.
+//  tracker and company, with per-tracker / per-host blocking. Blocking whole
+//  categories is left to Ad Block's lists.
 //  Names and categories come from data/trackers/db.json (pnpm build:trackers),
 //  which is optional: without it the panel lists bare third-party hosts.
 //  Requests are only observed (webRequest can't block in MV3) and the log
@@ -95,10 +96,9 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // ── Blocking ──
 
 async function getTrackerSettings() {
-  const d = await chrome.storage.local.get(["trackers_blocked", "trackers_blocked_categories", "trackers_blocked_hosts"]);
+  const d = await chrome.storage.local.get(["trackers_blocked", "trackers_blocked_hosts"]);
   return {
     trackers: d.trackers_blocked || [],
-    categories: d.trackers_blocked_categories || [],
     hosts: d.trackers_blocked_hosts || [],
   };
 }
@@ -114,9 +114,8 @@ async function doSyncTrackerRules() {
   const domains = new Set(settings.hosts);
   if (db) {
     const trackers = new Set(settings.trackers);
-    const categories = new Set(settings.categories);
     for (const [domain, id] of Object.entries(db.domains)) {
-      if (trackers.has(id) || categories.has(db.trackers[id][1])) domains.add(domain);
+      if (trackers.has(id)) domains.add(domain);
     }
   }
   const sorted = [...domains].sort();
@@ -137,7 +136,10 @@ async function doSyncTrackerRules() {
 }
 
 chrome.runtime.onInstalled.addListener(syncTrackerRules);
-onLocalChange(["trackers_blocked", "trackers_blocked_categories", "trackers_blocked_hosts"], syncTrackerRules);
+onLocalChange(["trackers_blocked", "trackers_blocked_hosts"], syncTrackerRules);
+
+// Older versions could block whole categories; Ad Block's lists cover that now
+chrome.runtime.onInstalled.addListener(() => chrome.storage.local.remove("trackers_blocked_categories"));
 
 // ── Popup ──
 

@@ -82,17 +82,6 @@ describe("Trackers panel", () => {
     }
   });
 
-  test("blocks a whole category", needsDb, async () => {
-    await setSettings({ trackers_blocked_categories: ["advertising", "site_analytics"] });
-    try {
-      const { page, data } = await visit();
-      await page.close();
-      assert.deepEqual(blockedHosts(data), ["static.criteo.net", "www.google-analytics.com"]);
-    } finally {
-      await setSettings({ trackers_blocked_categories: [] });
-    }
-  });
-
   test("blocks an unknown third-party host", async () => {
     await setSettings({ trackers_blocked_hosts: ["px.unknown-thirdparty.example"] });
     try {

@@ -620,6 +620,8 @@ select.field { width: auto; margin-bottom: 0; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .trk-company { color: var(--text-dim); margin-left: 4px; }
+.trk-main { flex: 1; min-width: 0; }
+.trk-main .trk-name { display: block; }
 .trk-count { color: var(--text-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
 .trk-chip {
   font-size: 10px; padding: 2px 6px; border-radius: var(--radius-xs);

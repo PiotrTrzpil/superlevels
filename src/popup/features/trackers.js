@@ -2,6 +2,7 @@
 //  Trackers
 // ═══════════════════════════════════
 import { activeTab } from "../lib/tabs.js";
+import { TRACKER_INFO } from "./tracker-info.js";
 
 const TRACKER_CATEGORIES = {
   advertising: "Advertising", site_analytics: "Analytics", social_media: "Social media",
@@ -11,16 +12,12 @@ const TRACKER_CATEGORIES = {
   cdn: "CDNs", hosting: "Hosting", email: "Email", extensions: "Extensions",
   misc: "Misc", unknown: "Unknown",
 };
-// Offered as "block everywhere" switches. The rest (CDNs, video players,
-// essential, hosting…) break too many sites to block wholesale.
-const TRACKER_BLOCKABLE = ["advertising", "site_analytics", "social_media", "customer_interaction", "pornvertising", "mobile_analytics", "telemetry"];
 // Storage key for each kind of block switch
-const TRACKER_KEYS = { tracker: "trackers_blocked", category: "trackers_blocked_categories", host: "trackers_blocked_hosts" };
+const TRACKER_KEYS = { tracker: "trackers_blocked", host: "trackers_blocked_hosts" };
 
 const trkSummary = document.getElementById("trkSummary");
 const trkHostEl = document.getElementById("trkHost");
 const trkList = document.getElementById("trkList");
-const trkCategories = document.getElementById("trkCategories");
 const trkNote = document.getElementById("trkNote");
 const trkReload = document.getElementById("trkReload");
 
@@ -41,13 +38,12 @@ function trkEl(tag, className, text) {
 }
 
 // A row's block switch: checked = blocked by you. kind/value pick the storage list.
-function trkSwitch(kind, value, checked, { disabled = false, title = "" } = {}) {
+function trkSwitch(kind, value, checked) {
   const label = trkEl("label", "switch");
   const input = trkEl("input");
   input.type = "checkbox";
   input.checked = checked;
-  input.disabled = disabled;
-  label.title = title || (checked ? "Blocked everywhere — click to allow" : "Block everywhere");
+  label.title = checked ? "Blocked everywhere — click to allow" : "Block everywhere";
   input.addEventListener("change", async () => {
     const key = TRACKER_KEYS[kind];
     const { [key]: list = [] } = await chrome.storage.local.get([key]);
@@ -60,16 +56,19 @@ function trkSwitch(kind, value, checked, { disabled = false, title = "" } = {}) 
   return label;
 }
 
-function trkChip(requests, blocked) {
-  if (blocked && blocked >= requests) return trkEl("span", "trk-chip blocked", "blocked");
-  if (blocked) return trkEl("span", "trk-chip partly", `${blocked}/${requests} blocked`);
-  return trkEl("span", "trk-chip", "loaded");
+// byYou: the row's own switch is on. Ad Block is the only other blocker.
+function trkChip(requests, blocked, byYou) {
+  if (!blocked) return trkEl("span", "trk-chip", "loaded");
+  const chip = blocked >= requests
+    ? trkEl("span", "trk-chip blocked", "blocked")
+    : trkEl("span", "trk-chip partly", `${blocked}/${requests} blocked`);
+  chip.title = byYou ? "Blocked by your switch" : "Blocked by Ad Block's lists";
+  return chip;
 }
 
 function renderTrackers(data) {
   trkList.replaceChildren();
-  trkCategories.replaceChildren();
-  const settings = data?.settings ?? { trackers: [], categories: [], hosts: [] };
+  const settings = data?.settings ?? { trackers: [], hosts: [] };
 
   if (!data?.page) {
     trkSummary.textContent = "Trackers";
@@ -82,20 +81,21 @@ function renderTrackers(data) {
     trkHostEl.textContent = `On ${data.page}`;
     if (!total) trkList.append(trkEl("div", "trk-empty", "No third-party requests on this page."));
 
-    // Known trackers, grouped by category (blockable categories first)
+    // Known trackers, grouped by category (most tracking-heavy first)
     const order = Object.keys(TRACKER_CATEGORIES);
     const groups = Object.groupBy(data.trackers, (t) => t.category);
     for (const category of Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b))) {
       trkList.append(trkEl("div", "trk-group", TRACKER_CATEGORIES[category] ?? category));
-      const byCategory = settings.categories.includes(category);
       for (const t of groups[category]) {
         const row = trkEl("div", "trk-row");
         const name = trkEl("span", "trk-name", t.name);
         name.title = t.hosts.join("\n");
         if (t.company && t.company !== t.name) name.append(trkEl("span", "trk-company", t.company));
-        row.append(name, trkEl("span", "trk-count", t.requests), trkChip(t.requests, t.blocked),
-          trkSwitch("tracker", t.id, byCategory || settings.trackers.includes(t.id),
-            byCategory ? { disabled: true, title: "Blocked with its whole category below" } : {}));
+        const main = trkEl("div", "trk-main");
+        main.append(name);
+        if (TRACKER_INFO[t.id]) main.append(trkEl("div", "opt-desc",TRACKER_INFO[t.id]));
+        row.append(main, trkEl("span", "trk-count", t.requests), trkChip(t.requests, t.blocked, settings.trackers.includes(t.id)),
+          trkSwitch("tracker", t.id, settings.trackers.includes(t.id)));
         trkList.append(row);
       }
     }
@@ -105,17 +105,10 @@ function renderTrackers(data) {
       for (const o of data.others) {
         const row = trkEl("div", "trk-row");
         row.append(trkEl("span", "trk-name", o.host), trkEl("span", "trk-count", o.requests),
-          trkChip(o.requests, o.blocked), trkSwitch("host", o.host, settings.hosts.includes(o.host)));
+          trkChip(o.requests, o.blocked, settings.hosts.includes(o.host)), trkSwitch("host", o.host, settings.hosts.includes(o.host)));
         trkList.append(row);
       }
     }
-  }
-
-  for (const category of TRACKER_BLOCKABLE) {
-    const row = trkEl("div", "trk-row");
-    row.append(trkEl("span", "trk-name", TRACKER_CATEGORIES[category]),
-      trkSwitch("category", category, settings.categories.includes(category), { disabled: !data?.source }));
-    trkCategories.append(row);
   }
 
   trkNote.replaceChildren();
