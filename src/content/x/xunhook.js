@@ -12,14 +12,6 @@
     div[data-testid="sidebarColumn"] > div > div > div > div > div > div:not(:first-of-type) {
       display: none !important;
     }
-    /* Explore link in left nav */
-    header[role="banner"] nav a[href="/explore"] {
-      display: none !important;
-    }
-    /* Explore link inside the More overflow dialog */
-    div[aria-labelledby="modal-header"] a[href="/explore"] {
-      display: none !important;
-    }
   `;
 
   function inject() {

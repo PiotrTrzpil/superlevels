@@ -146,7 +146,7 @@ Names and categories come from the [WhoTracks.Me](https://whotracks.me) database
 Brings back a dim theme for X/Twitter: Dim, Slate, Jade, Plum, Dusk, Ember, or any hue you pick, with a live preview in the popup. Off by default.
 
 #### 𝕏 X unhook
-Hides the right sidebar's panels (trends, news, who to follow, Premium upsells) while keeping search, and removes Explore from the navigation.
+Hides the right sidebar's panels (trends, news, who to follow, Premium upsells) while keeping search.
 
 #### 𝕏 X reply audience
 When you start a new post, opens the "Who can reply?" picker and selects "Accounts you follow and who they follow" for you.
