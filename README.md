@@ -1,4 +1,4 @@
-# 🚀 superlevels
+# <img src="assets/icons/icon48.png" width="32" height="32" alt="" align="absmiddle"> superlevels
 
 by [@levelsio](https://x.com/levelsio)
 
@@ -39,7 +39,7 @@ What runs is exactly what's in the repo: there's no bundler, minifier or build s
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable **Developer mode** (toggle in the top right corner)
 4. Click **Load unpacked** and select the `superlevels` folder
-5. The 🚀 icon appears in your toolbar. Pin it so the popup is one click away.
+5. The <img src="assets/icons/icon16.png" width="16" height="16" alt="" align="absmiddle"> icon appears in your toolbar. Pin it so the popup is one click away.
 
 **Optional: Ad Block lists and tracker names.** Ad Block and the names in the 👁 Trackers panel need data that isn't in the repo (see [License and credits](#license-and-credits)). Everything else works without it. To add it, run these in the `superlevels` folder with [Node.js](https://nodejs.org) 18 or newer, then click the reload icon on the extension in `chrome://extensions/`:
 
