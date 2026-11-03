@@ -1,5 +1,5 @@
 // ═══════════════════════════════════
-//  Cookie Consent (GDPR) Dismisser
+//  Cookie banners: hide the dialog and click Reject, never Accept
 // ═══════════════════════════════════
 import { sendToActiveTab } from "../lib/tabs.js";
 import { featureToggle } from "../lib/toggle.js";

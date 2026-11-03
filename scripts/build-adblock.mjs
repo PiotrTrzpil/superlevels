@@ -35,7 +35,7 @@ const FANBOY = "https://secure.fanboy.co.nz/";
 const EXTRAS = [
   // Shown in the popup's Cookie banners section, not with the other extras
   { id: "cookies", title: "Block consent scripts", url: FANBOY + "fanboy-cookiemonster.txt",
-    description: "Stops consent banners from loading at all, so there's nothing to click and no consent is given. Uses Ad Block, so it only works while Ad Block is on." },
+    description: "Stops consent banners from loading at all, so there's nothing to refuse. Uses Ad Block, so it only works while Ad Block is on." },
   { id: "social", title: "Social widgets", url: FANBOY + "fanboy-social.txt",
     description: "Removes like, share and follow buttons, comment plugins and embedded social feeds, along with the tracking they bring. Embedded posts may disappear too." },
   { id: "newsletters", title: "Newsletter pop-ups", url: FANBOY + "fanboy-newsletter.txt",

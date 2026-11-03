@@ -1,6 +1,7 @@
 // ═══════════════════════════════════
-//  superlevels: Cookie Consent Auto-Dismisser
-//  Based on I-Still-Dont-Care-About-Cookies
+//  superlevels: Cookie banner refusal
+//  Hides the banner and clicks a refusal when the site offers one.
+//  Never clicks Accept, Allow, Agree, Close, or Dismiss, and never writes a consent cookie.
 // ═══════════════════════════════════
 (() => {
   const STYLE_ID = "sl-nocookie";
@@ -72,48 +73,124 @@
     .cc-grower { max-height: 0 !important; }
   `;
 
-  const CLICK_SELECTORS = [
-    "#onetrust-accept-btn-handler",
-    "#accept-recommended-btn-handler",
-    ".onetrust-close-btn-handler",
-    "#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll",
-    "#CybotCookiebotDialogBodyButtonAccept",
-    "#CybotCookiebotDialogBodyLevelButtonAccept",
-    ".cky-btn-accept",
-    "#didomi-notice-agree-button",
+  // Vendor reject controls. These ids and classes are the refuse action, never Accept,
+  // Allow, Agree, Close, or Dismiss (those record a yes, or save whatever was pre-ticked).
+  const REJECT_SELECTORS = [
+    "#onetrust-reject-all-handler",
+    "#CybotCookiebotDialogBodyButtonDecline",
+    "#CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll",
+    "#CybotCookiebotDialogBodyLevelButtonDecline",
+    ".cky-btn-reject",
+    "#didomi-notice-disagree-button",
     ".didomi-continue-without-agreeing",
-    ".qc-cmp2-summary-buttons button[mode='primary']",
-    ".qc-cmp-button[mode='primary']",
-    ".fc-cta-consent .fc-primary-button",
-    ".cc-accept", ".cc-btn.cc-dismiss", ".cc-allow",
-    "[data-cookiefirst-action='accept']",
-    ".cookie-accept", ".js-cookie-accept",
-    ".cli-plugin-accept-btn",
-    "#cookie_action_close_header",
-    ".eupopup-button_1",
-    "#eu-cookie-compliance-accept",
-    ".iubenda-cs-accept-btn",
-    ".osano-cm-accept-all",
-    ".accept-cookies-button",
-    "button[data-gdpr='accept']",
-    ".js-accept-cookies",
-    ".cmplz-btn.cmplz-accept",
-    ".snigel-cmp-accept-all",
-    '[aria-label="Accept cookies" i]',
-    '[aria-label="Close" i][class*="cookie" i]',
-    '[aria-label="Close" i][class*="consent" i]',
+    "[data-cookiefirst-action='reject']",
+    "[data-cookiefirst-action='decline']",
+    ".osano-cm-denyAll",
+    ".osano-cm-deny",
+    ".iubenda-cs-reject-btn",
+    ".cmplz-deny",
+    ".cmplz-btn.cmplz-deny",
+    ".wt-cli-reject-btn",
+    "#cookie_action_close_header_reject",
+    ".cc-deny",
+    "[data-tid='banner-decline']",
+    ".fc-cta-do-not-consent",
+    "button[data-gdpr='reject']",
+    "button[data-gdpr='decline']",
+    "[data-testid='uc-deny-all-button']",
+    "[data-testid='uc-reject-all-button']",
   ];
 
-  // Generic labels like "Accept" or "Agree" also appear on invitations, friend
-  // requests and terms dialogs, so only click them inside a cookie/consent box
-  const CONSENT_SCOPE = ':is([class*="cookie" i], [id*="cookie" i], [class*="consent" i], [id*="consent" i], [class*="gdpr" i], [id*="gdpr" i]):not(html, body)';
-  const GENERIC_ACCEPT = [
-    'button[title="Accept" i]', 'button[title="Accept all" i]', 'button[title="Allow all" i]',
-    'button[title="Agree" i]', '[aria-label="Accept" i]', '[aria-label="Accept all" i]',
-    '[aria-label="Allow all" i]', '[aria-label="Agree" i]',
-    '.agree-button', '#agree-button', "[data-action='accept']",
-  ];
-  CLICK_SELECTORS.push(...GENERIC_ACCEPT.map((sel) => `${CONSENT_SCOPE} ${sel}`));
+  // The whole accessible name must be a refusal. "Accept", "Agree", "Save" and
+  // "Allow selection" do not match, so they are never clicked.
+  const REJECT_LABELS = new Set([
+    "reject", "reject all", "reject all cookies", "reject additional cookies",
+    "reject non-essential", "reject non-essential cookies",
+    "refuse", "refuse all", "decline", "decline all", "decline all cookies",
+    "deny", "deny all", "deny all cookies", "disagree",
+    "necessary only", "essential only", "essentials only",
+    "only necessary", "only essential", "only required",
+    "only necessary cookies", "only essential cookies",
+    "use necessary only", "use necessary cookies only",
+    "continue without accepting", "continue without agreeing",
+    "alle ablehnen", "alles ablehnen", "ablehnen", "nur notwendige", "nur essenzielle",
+    "tout refuser", "refuser", "continuer sans accepter", "je refuse",
+    "alles weigeren", "weigeren", "alles afwijzen", "afwijzen", "alleen noodzakelijke",
+    "odrzuć", "odrzuć wszystko", "odrzuć wszystkie", "tylko niezbędne", "nie zgadzam się",
+    "rechazar", "rechazar todo", "rechazar todas",
+    "rifiuta", "rifiuta tutto", "rifiuta tutti",
+    "avvisa", "avvisa alla", "afvis", "afvis alle",
+    "rejeitar", "rejeitar tudo", "recusar", "recusar tudo",
+    "odmítnout", "odmítnout vše", "hylkää", "hylkää kaikki",
+  ]);
+
+  // Generic labels also appear on invitations and friend requests, so only buttons
+  // inside a consent dialog qualify. The extra hosts are frameworks whose root
+  // has neither "cookie" nor "consent" in the name.
+  const CONSENT_SCOPE = `:is(
+    [class*="cookie" i], [id*="cookie" i],
+    [class*="consent" i], [id*="consent" i],
+    [class*="gdpr" i], [id*="gdpr" i],
+    #sp_message_container_0, #qcCmpUi, .qc-cmp2-container,
+    .truste_box_overlay, .osano-cm-dialog, .osano-cm-window,
+    .evidon-banner, #_evidon_banner, .klaro,
+    .cmpbox, #cmpbox, #cmpbox2,
+    .snigel-cmp-framework, #usercentrics-root, [id^="usercentrics"]
+  ):not(html, body)`;
+  const BUTTON = "button, [role='button'], input[type='button'], input[type='submit']";
+  const clicked = new WeakSet();
+
+  function searchRoots() {
+    const roots = [document];
+    for (const host of document.querySelectorAll("#usercentrics-root, [id^='usercentrics']")) {
+      if (host.shadowRoot) roots.push(host.shadowRoot);
+    }
+    return roots;
+  }
+
+  function labelOf(el) {
+    const raw = el.getAttribute("aria-label") || el.getAttribute("title") || el.value || el.textContent || "";
+    return raw.replace(/\s+/g, " ").trim().replace(/[.!]+$/, "");
+  }
+
+  function isRejectLabel(text) {
+    return REJECT_LABELS.has(text.toLowerCase());
+  }
+
+  function rejectButtonIn(root) {
+    for (const el of root.querySelectorAll(BUTTON)) {
+      if (!clicked.has(el) && isRejectLabel(labelOf(el))) return el;
+    }
+    return null;
+  }
+
+  function findReject() {
+    for (const sel of REJECT_SELECTORS) {
+      for (const root of searchRoots()) {
+        const el = root.querySelector(sel);
+        if (el && !clicked.has(el)) return el;
+      }
+    }
+    for (const root of searchRoots()) {
+      for (const scope of root.querySelectorAll(CONSENT_SCOPE)) {
+        const found = rejectButtonIn(scope);
+        if (found) return found;
+      }
+      if (root.host && root.host.matches && root.host.matches(CONSENT_SCOPE)) {
+        const found = rejectButtonIn(root);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  function clickReject() {
+    const target = findReject();
+    if (!target) return;
+    clicked.add(target);
+    // The handler belongs to the page. A throw there must not stop later refusals.
+    try { target.click(); } catch { /* page handler */ }
+  }
 
   function injectCSS() {
     if (document.getElementById(STYLE_ID)) return;
@@ -123,30 +200,41 @@
     (document.head || document.documentElement).appendChild(style);
   }
 
-  function tryClick() {
-    for (const sel of CLICK_SELECTORS) {
-      try {
-        const el = document.querySelector(sel);
-        if (el && el.offsetParent !== null) {
-          el.click();
-          return true;
-        }
-      } catch {}
-    }
-    return false;
-  }
-
   function removeCSS() {
     const el = document.getElementById(STYLE_ID);
     if (el) el.remove();
   }
 
+  // Banners show up late. One scan per frame is enough, and the hide rule does not
+  // block the click: a refusal is clicked even after the dialog is display:none.
+  let active = false;
+  let scheduled = false;
+  let observer = null;
+
+  function schedule() {
+    if (!active || scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      if (active) clickReject();
+    });
+  }
+
   function activate() {
+    if (active) return;
+    active = true;
     injectCSS();
-    setTimeout(tryClick, 500);
-    setTimeout(tryClick, 1500);
-    setTimeout(tryClick, 3000);
-    setTimeout(tryClick, 5000);
+    schedule();
+    observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  function deactivate() {
+    active = false;
+    scheduled = false;
+    observer?.disconnect();
+    observer = null;
+    removeCSS();
   }
 
   // Check storage and apply
@@ -158,7 +246,7 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "nocookie_toggle") {
       if (msg.enabled) activate();
-      else removeCSS();
+      else deactivate();
     }
   });
 })();

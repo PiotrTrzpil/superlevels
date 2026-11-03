@@ -6,7 +6,7 @@ by [@levelsio](https://x.com/levelsio)
 
 Please star SuperLevels if you like it!
 
-A super Chrome extension that replaces 20+ separate extensions with one open-source, privacy-respecting package: tab cleaner, ad and tracker blocker, cookie banner dismisser, paywall bypass, dark mode, X and YouTube fixes, bookmark tools, cookie editor, redirect tracer, page summaries and more.
+A super Chrome extension that replaces 20+ separate extensions with one open-source, privacy-respecting package: tab cleaner, ad and tracker blocker, cookie banner refusal, paywall bypass, dark mode, X and YouTube fixes, bookmark tools, cookie editor, redirect tracer, page summaries and more.
 
 Most Chrome extensions are closed-source malware/spyware-filled garbage that form a massive security risk. This one is open source and you can read and check the source code (with AI) before you install it, and customize it to your liking!
 
@@ -128,9 +128,9 @@ Blocks ad and tracker requests and hides the empty ad slots they leave behind, l
 Needs the one-time build in [Install](#install). Until then the popup shows "NOT BUILT" and everything else works normally.
 
 #### 🚫 Cookie banners
-Hides and auto-dismisses cookie consent pop-ups. Covers OneTrust, Cookiebot, Didomi, Usercentrics, iubenda, Osano and many more consent frameworks. Turn it off if a site breaks.
+Hides cookie consent pop-ups. Where the site shows a refusal (including the usual OneTrust, Cookiebot, Didomi and Usercentrics buttons), it clicks that and never clicks Accept, so the extension does not record a consent the user did not give. A banner with no refusal is only hidden. Turn it off if a site breaks.
 
-**Block consent scripts** (off by default) goes further: Fanboy's Cookie Monster list stops consent banners from loading at all, so nothing is clicked and no consent is given. It's an Ad Block list, so it needs Ad Block on and built.
+**Block consent scripts** (off by default) goes further: Fanboy's Cookie Monster list stops consent banners from loading at all, so there is nothing to refuse. It's an Ad Block list, so it needs Ad Block on and built.
 
 #### 🗄 No Paywall
 Opens paywalled news articles straight on [archive.is](https://archive.is): an nytimes.com article goes to `archive.is/https://www.nytimes.com/...`. Only article URLs redirect (homepages and section fronts don't), tracking parameters are dropped so existing snapshots match, and links clicked from an archive page open the original. The site list (NYT, WSJ, FT, Bloomberg, The Economist, plus Dutch, Belgian, German, French, Italian, Spanish and Nordic papers like NRC, De Standaard, Spiegel, Le Monde, Corriere, El País) is editable in the popup.
@@ -293,7 +293,7 @@ The tests use Playwright's Chromium because branded Google Chrome ignores `--loa
 
 MIT, for the extension's code.
 
-Some features started from other open-source projects: X dim mode from [x-dim-mode](https://github.com/juanbuis/x-dim-mode), YouTube unhook from remove-youtube-suggestions, and cookie banners from I Still Don't Care About Cookies.
+Some features started from other open-source projects: X dim mode from [x-dim-mode](https://github.com/juanbuis/x-dim-mode), YouTube unhook from remove-youtube-suggestions, and cookie banners from I Still Don't Care About Cookies. That project clicks Accept. SuperLevels clicks Reject, and never Accept.
 
 The optional data the builds download isn't in this repo and keeps its own licence:
 
