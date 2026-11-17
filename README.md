@@ -54,14 +54,14 @@ They need no `pnpm install`. Run them again whenever you want fresher lists.
 
 ## Features
 
-The popup is grouped like this. On X, YouTube and Photopea it opens on 🌐 Sites; elsewhere it reopens the page you last used.
+The popup is grouped like this. On X, YouTube, Photopea and Booking.com it opens on 🌐 Sites; elsewhere it reopens the page you last used.
 
 | Group | Pages |
 |---|---|
 | 🗂 Organize | 🚮 Tabs · 🔖 Bookmarks |
 | ⚡ This page | ✨ Summarize · 🖼 PiP · 🎵 Music |
 | 🛡 Privacy | 🛡 Blocking (Ad Block, cookie banners, No Paywall) · 👁 Trackers |
-| 🌐 Sites | X dim mode, X unhook, X reply audience, YouTube unhook, Photopea no ads |
+| 🌐 Sites | X dim mode, X unhook, X reply audience, YouTube unhook, Photopea no ads, Booking.com search defaults |
 | 🎨 Look | 🌙 Dark mode · 🎨 Live CSS |
 | 🛠 Dev | 🍪 Cookies · 🔀 Redirects · ⚡ Toggles (JavaScript, JSON formatter) |
 
@@ -156,6 +156,9 @@ Removes YouTube distractions, each switchable on its own: sidebar suggestions, e
 
 #### 🫛 Photopea no ads
 Hides the 320px ad column on [photopea.com](https://www.photopea.com) and expands the editor to the full window width. (Photopea sizes the editor from `window.innerWidth - 320`, so a script in the page reports the window as 320px wider.)
+
+#### 🏨 Booking.com search defaults
+New searches on [booking.com](https://www.booking.com) open with your sort and filters already set: cheapest first and review score 8+ by default, plus any of private bathroom, air conditioning, breakfast, kitchen, free WiFi, pool, hotels only, entire place, under 3 km from the center and free cancellation, and a budget per night (in the currency Booking shows you prices in, which the popup fills in). They're added to the search URL whenever you search from Booking's search box, and a filter you change on the results stays changed when you reload. On the results it hides the "We have 2 left at this price" pressure lines, the paid "Featured" listings and dorm beds (a hostel's private rooms stay), shows the price per night under the total, and can hide places with fewer than 10, 50 or 100 reviews. Highlights make what decides a booking easy to spot: red for one single bed for two people, a shared bathroom or taxes on top of the price; amber for only sofa or bunk beds, fewer than 50 reviews or more than 4 km from the center; green for entire places, free cancellation, breakfast, a location score of 9+ and under 1.5 km from the center. Pressure lines, dorms and highlights are matched in English only.
 
 ### 🎨 Look
 

@@ -5,6 +5,7 @@
 import "./features/tabcleaner.js";
 import { loadAdblock } from "./features/adblock.js";
 import { loadArchive } from "./features/archive.js";
+import { loadBooking } from "./features/booking.js";
 import { loadBookmarkBridge } from "./features/bookmarks.js";
 import { loadCookies } from "./features/cookies.js";
 import { loadDarkMode } from "./features/darkmode.js";
@@ -51,7 +52,7 @@ const PAGE_LOADERS = {
   redirects: [loadRedirects],
   darkmode: [loadDarkMode],
   livecss: [loadLiveCSS],
-  sites: [loadXDim, loadXUnhook, loadXReply, loadUnhook, loadPhotopea],
+  sites: [loadXDim, loadXUnhook, loadXReply, loadUnhook, loadPhotopea, loadBooking],
   blocking: [loadAdblock, loadNoCookie, loadArchive],
   trackers: [loadTrackers],
   toggles: [loadJsToggle, loadJsonFormat],
@@ -77,6 +78,20 @@ document.querySelectorAll(".subnav button").forEach((btn) => {
   });
 });
 
+// Scroll a just-opened row into view: as little as needed to show all of it,
+// but never past its header when it's taller than the page
+function revealFeat(feat) {
+  const body = feat.closest(".page-body");
+  if (!body) return;
+  const margin = 14; // the page's padding
+  const row = feat.getBoundingClientRect();
+  const view = body.getBoundingClientRect();
+  const overflow = row.bottom + margin - view.bottom;
+  if (overflow <= 0) return;
+  const headerRoom = row.top - margin - view.top;
+  body.scrollBy({ top: Math.min(overflow, headerRoom), behavior: "smooth" });
+}
+
 // Feature rows: clicking the row (not its switch) shows its details;
 // which rows are open is remembered across popup opens. A page's only
 // feature (.static) stays open.
@@ -84,7 +99,7 @@ const feats = document.querySelectorAll(".feat:not(.static)");
 feats.forEach((feat) => {
   feat.querySelector(".feat-head").addEventListener("click", (e) => {
     if (e.target.closest(".switch")) return;
-    feat.classList.toggle("open");
+    if (feat.classList.toggle("open")) revealFeat(feat);
     const open = [...feats].filter((f) => f.classList.contains("open")).map((f) => f.dataset.feat);
     chrome.storage.local.set({ open_feats: open });
   });
@@ -94,7 +109,7 @@ chrome.storage.local.get(["open_feats"], ({ open_feats = [] }) => {
 });
 
 // Sites whose fixes live on the Sites page; the popup opens there on them
-const SITE_HOSTS = /(^|\.)(x\.com|twitter\.com|youtube\.com|photopea\.com)$/;
+const SITE_HOSTS = /(^|\.)(x\.com|twitter\.com|youtube\.com|photopea\.com|booking\.com)$/;
 
 function isFixedSite(url) {
   try { return SITE_HOSTS.test(new URL(url).hostname); } catch { return false; }

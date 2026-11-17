@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SuperLevels",
   "version": "2.0",
-  "description": "The super Chrome extension by @levelsio — dark mode, GDPR cookie refusal, YouTube unhook, tab cleaner, cookie editor, redirect tracer, live CSS editor, X/Twitter dim mode, JS toggle, JSON formatter, music recognizer, picture-in-picture, Google Maps links, view image, Photopea ad remover, archive.is auto-redirect for paywalled articles, ad and tracker blocking, and a bookmark bridge for local scripts.",
+  "description": "The super Chrome extension by @levelsio — dark mode, GDPR cookie refusal, YouTube unhook, tab cleaner, cookie editor, redirect tracer, live CSS editor, X/Twitter dim mode, JS toggle, JSON formatter, music recognizer, picture-in-picture, Google Maps links, view image, Photopea ad remover, Booking.com search defaults, archive.is auto-redirect for paywalled articles, ad and tracker blocking, and a bookmark bridge for local scripts.",
   "permissions": ["tabs", "tabGroups", "storage", "alarms", "cookies", "activeTab", "webRequest", "webNavigation", "tabCapture", "contentSettings", "scripting", "bookmarks", "nativeMessaging", "favicon", "declarativeNetRequest", "idle"],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -32,6 +32,10 @@
   }, {
     "matches": ["*://www.photopea.com/*", "*://photopea.com/*"],
     "js": ["src/content/photopea/photopea.js"],
+    "run_at": "document_start"
+  }, {
+    "matches": ["*://www.booking.com/*"],
+    "js": ["src/content/booking/booking.js"],
     "run_at": "document_start"
   }, {
     "matches": ["*://www.google.com/*", "*://www.google.co.uk/*", "*://www.google.co.jp/*", "*://www.google.co.in/*", "*://www.google.co.kr/*", "*://www.google.co.id/*", "*://www.google.com.br/*", "*://www.google.com.au/*", "*://www.google.com.mx/*", "*://www.google.de/*", "*://www.google.fr/*", "*://www.google.es/*", "*://www.google.it/*", "*://www.google.nl/*", "*://www.google.pt/*", "*://www.google.pl/*", "*://www.google.se/*", "*://www.google.ca/*", "*://www.google.ru/*"],

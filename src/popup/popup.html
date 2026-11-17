@@ -307,6 +307,83 @@
           <div class="xdim-note">Open Photopea tabs reload when you toggle.</div>
         </div>
       </div>
+
+      <div class="feat-group">Booking.com</div>
+
+      <div class="feat" data-feat="booking">
+        <div class="feat-head">
+          <span class="feat-icon">🏨</span>
+          <div class="feat-title">Search defaults<div class="opt-desc">Your sort and filters, no pressure tactics</div></div>
+          <span class="status on" id="bookingStatus">ON</span>
+          <label class="switch"><input type="checkbox" id="bookingToggle" checked><span class="slider"></span></label>
+          <span class="feat-chev">▶</span>
+        </div>
+        <div class="feat-body">
+          <div class="dark-section booking-selects">
+            <label>Sort by
+              <select id="bookingSort" class="field">
+                <option value="">Booking's default</option>
+                <option value="price">Price (lowest first)</option>
+                <option value="bayesian_review_score">Top reviewed</option>
+                <option value="class_and_price">Property rating and price</option>
+                <option value="distance_from_search">Distance from center</option>
+                <option value="class">Property rating (high to low)</option>
+                <option value="upsort_bh">Homes & apartments first</option>
+              </select>
+            </label>
+            <label>Review score
+              <select id="bookingScore" class="field">
+                <option value="">Any</option>
+                <option value="60">Pleasant: 6+</option>
+                <option value="70">Good: 7+</option>
+                <option value="80">Very good: 8+</option>
+                <option value="90">Wonderful: 9+</option>
+              </select>
+            </label>
+            <div class="booking-budget">
+              <span>Budget per night</span>
+              <div class="booking-budget-fields">
+                <input type="number" id="bookingBudgetMin" class="field" min="0" step="10" placeholder="min" aria-label="Minimum per night">
+                <span>–</span>
+                <input type="number" id="bookingBudgetMax" class="field" min="0" step="10" placeholder="max" aria-label="Maximum per night">
+                <input type="text" id="bookingBudgetCurrency" class="field" maxlength="3" placeholder="EUR" aria-label="Currency" title="The currency Booking shows you prices in">
+              </div>
+            </div>
+            <label>Hide places with few reviews
+              <select id="bookingMinReviews" class="field">
+                <option value="0">Show all</option>
+                <option value="10">Fewer than 10</option>
+                <option value="50">Fewer than 50</option>
+                <option value="100">Fewer than 100</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="booking-label">Also filter by</div>
+          <div class="unhook-features booking-grid" id="bookingExtras">
+            <div class="unhook-feature clickable off" data-extra="privatebath"><span class="check">✓</span> Private bathroom</div>
+            <div class="unhook-feature clickable off" data-extra="aircon"><span class="check">✓</span> Air conditioning</div>
+            <div class="unhook-feature clickable off" data-extra="breakfast"><span class="check">✓</span> Breakfast</div>
+            <div class="unhook-feature clickable off" data-extra="kitchen"><span class="check">✓</span> Kitchen</div>
+            <div class="unhook-feature clickable off" data-extra="wifi"><span class="check">✓</span> Free WiFi</div>
+            <div class="unhook-feature clickable off" data-extra="pool"><span class="check">✓</span> Pool</div>
+            <div class="unhook-feature clickable off" data-extra="hotels"><span class="check">✓</span> Hotels only</div>
+            <div class="unhook-feature clickable off" data-extra="entire"><span class="check">✓</span> Entire place</div>
+            <div class="unhook-feature clickable off" data-extra="center"><span class="check">✓</span> Under 3 km from center</div>
+            <div class="unhook-feature clickable off" data-extra="freecancel"><span class="check">✓</span> Free cancellation</div>
+          </div>
+
+          <div class="booking-label">On the results</div>
+          <div class="unhook-features" id="bookingCleanup">
+            <div class="unhook-feature clickable" data-clean="pressure"><span class="check">✓</span> Hide "only 2 left" pressure messages</div>
+            <div class="unhook-feature clickable" data-clean="ads"><span class="check">✓</span> Hide paid "Featured" listings</div>
+            <div class="unhook-feature clickable" data-clean="noDorms"><span class="check">✓</span> Hide dorm beds (hostels' private rooms stay)</div>
+            <div class="unhook-feature clickable" data-clean="perNight"><span class="check">✓</span> Show the price per night</div>
+            <div class="unhook-feature clickable" data-clean="highlights"><span class="check">✓</span> Highlight beds, distance, extra fees, few reviews</div>
+          </div>
+          <div class="xdim-note">Sort and filters apply to new searches, once each, so anything you change on Booking stays changed.</div>
+        </div>
+      </div>
     </div>
   </div>
 

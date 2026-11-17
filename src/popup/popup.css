@@ -892,3 +892,16 @@ select.field { width: auto; margin-bottom: 0; }
 }
 .btn-cancel { background: var(--surface-3); color: var(--text-2); }
 .btn-cancel:hover { background: var(--border-strong); }
+
+/* ── Booking.com ── */
+.booking-selects { display: grid; gap: 8px; }
+.booking-selects label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; }
+.booking-selects select.field { width: 170px; }
+.booking-label { font-size: 11px; color: var(--text-muted); margin: 4px 2px 6px; }
+.booking-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 6px; }
+.booking-grid .unhook-feature { padding: 6px 10px; gap: 6px; }
+.booking-budget { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.booking-budget-fields { display: flex; align-items: center; gap: 4px; width: 170px; }
+.booking-budget-fields .field { margin: 0; padding: 5px 6px; min-width: 0; }
+.booking-budget-fields input[type="number"] { flex: 1; }
+.booking-budget-fields input[type="text"] { width: 42px; flex: none; text-transform: uppercase; }
