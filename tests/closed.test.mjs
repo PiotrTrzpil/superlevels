@@ -105,6 +105,22 @@ test("when Chrome rejects a bookmark, only the tabs bookmarked before it leave t
   assert.deepEqual(await inboxShape(ids["C3 Inbox"]), [["oldest", "https://ok.c3/old"]]);
 });
 
+test("tabs show how long ago they were last used, when that was saved", async () => {
+  const now = Date.now();
+  await ext.page.evaluate((closed_tabs) => chrome.storage.local.set({ closed_tabs }), [
+    { id: "u1", title: "minutes", url: "https://minutes.c5/", time: now, lastUsed: now - 5 * 60000 },
+    { id: "u2", title: "hours", url: "https://hours.c5/", time: now, lastUsed: now - 3 * 3600000 },
+    { id: "u3", title: "days", url: "https://days.c5/", time: now, lastUsed: now - 4 * 86400000 },
+    { id: "u4", title: "unknown", url: "https://unknown.c5/", time: now },
+  ]);
+  const { page } = ext;
+  await page.reload();
+  assert.equal(await item("minutes").locator(".used").textContent(), "used 5m ago");
+  assert.equal(await item("hours").locator(".used").textContent(), "used 3h ago");
+  assert.equal(await item("days").locator(".used").textContent(), "used 4d ago");
+  assert.equal(await item("unknown").locator(".used").count(), 0);
+});
+
 test("tabs closed from a tab group show the group's name, and the filter matches it", async () => {
   await ext.page.evaluate((closed_tabs) => chrome.storage.local.set({ closed_tabs }), [
     { id: "g1", title: "grouped", url: "https://grouped.c4/", time: Date.now(), group: { title: "Research", color: "blue" } },

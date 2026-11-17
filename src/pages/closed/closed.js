@@ -118,6 +118,22 @@ function renderTabGroup({ title, color }) {
   });
 }
 
+// "used 3d ago": how long before now the tab was last used
+function agoLabel(ts) {
+  const min = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (min < 60) return `used ${min}m ago`;
+  if (min < 60 * 24) return `used ${Math.round(min / 60)}h ago`;
+  return `used ${Math.round(min / (60 * 24))}d ago`;
+}
+
+function renderLastUsed(ts) {
+  return el("span", {
+    className: "used",
+    textContent: agoLabel(ts),
+    title: `Last used ${new Date(ts).toLocaleString()}`,
+  });
+}
+
 function renderItem(t) {
   const link = el("a", { href: t.url, textContent: t.title, title: t.url });
   link.addEventListener("click", (e) => {
@@ -133,8 +149,10 @@ function renderItem(t) {
     link,
     ...(t.group ? [renderTabGroup(t.group)] : []),
     el("span", { className: "host", textContent: hostOf(t.url) }),
+    ...(t.lastUsed ? [renderLastUsed(t.lastUsed)] : []),
     el("span", {
       className: "time",
+      title: `Closed ${new Date(t.time).toLocaleString()}`,
       textContent: new Date(t.time).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
     }),
     bookmark,

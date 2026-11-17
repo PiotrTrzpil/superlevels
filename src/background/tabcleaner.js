@@ -249,6 +249,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         url: tab.url,
         title: tab.title || tab.url,
         time: now,
+        // Chrome's wall-clock time, not tabActivity's (that one is shifted by time away)
+        ...(tab.lastAccessed && { lastUsed: tab.lastAccessed }),
         ...(group && { group: { title: group.title ?? "", color: group.color } }),
       };
     }),
