@@ -8,11 +8,18 @@ importers:
 
   .:
     devDependencies:
+      '@mozilla/readability':
+        specifier: 0.6.0
+        version: 0.6.0
       playwright-core:
         specifier: 1.64.0-alpha-1790635538000
         version: 1.64.0-alpha-1790635538000
 
 packages:
+
+  '@mozilla/readability@0.6.0':
+    resolution: {integrity: sha512-juG5VWh4qAivzTAeMzvY9xs9HY5rAcr2E4I7tiSSCokRFi7XIZCAu92ZkSTsIj1OPceCifL3cpfteP3pDT9/QQ==}
+    engines: {node: '>=14.0.0'}
 
   playwright-core@1.64.0-alpha-1790635538000:
     resolution: {integrity: sha512-pNwaXirhXMRLaRQs4NQ18EpTdtDoFwyPH9FOaaDC7YXG4hpwE2xmwCic/1srbuExVQC7zT9LJSJpDBAru+Vo9A==}
@@ -20,5 +27,7 @@ packages:
     hasBin: true
 
 snapshots:
+
+  '@mozilla/readability@0.6.0': {}
 
   playwright-core@1.64.0-alpha-1790635538000: {}
