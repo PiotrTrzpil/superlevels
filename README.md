@@ -6,7 +6,7 @@ by [@levelsio](https://x.com/levelsio)
 
 Please star SuperLevels if you like it!
 
-A super Chrome extension that replaces 20+ separate extensions with one open-source, privacy-respecting package: tab cleaner, ad and tracker blocker, cookie banner refusal, paywall bypass, dark mode, X and YouTube fixes, bookmark tools, cookie editor, redirect tracer, page summaries and more.
+A super Chrome extension that replaces 20+ separate extensions with one open-source, privacy-respecting package: tab cleaner, ad and tracker blocker, cookie banner refusal, paywall bypass, dark mode, X and YouTube fixes, bookmark tools, cookie editor, redirect tracer, page summaries, reader view with Markdown export and more.
 
 Most Chrome extensions are closed-source malware/spyware-filled garbage that form a massive security risk. This one is open source and you can read and check the source code (with AI) before you install it, and customize it to your liking!
 
@@ -59,7 +59,7 @@ The popup is grouped like this. On X, YouTube, Photopea and Booking.com it opens
 | Group | Pages |
 |---|---|
 | 🗂 Organize | 🚮 Tabs · 🔖 Bookmarks |
-| ⚡ This page | ✨ Summarize · 🖼 PiP · 🎵 Music |
+| ⚡ This page | 📖 Reader · ✨ Summarize · 🖼 PiP · 🎵 Music |
 | 🛡 Privacy | 🛡 Blocking (Ad Block, cookie banners, No Paywall) · 👁 Trackers |
 | 🌐 Sites | X dim mode, X unhook, X reply audience, YouTube unhook, Photopea no ads, Booking.com search defaults |
 | 🎨 Look | 🌙 Dark mode · 🎨 Live CSS |
@@ -108,6 +108,9 @@ Messages to the extension are limited to 1 MB, so split large changes into sever
 </details>
 
 ### ⚡ This page
+
+#### 📖 Reader view
+Opens the article on the current tab in a clean reading view in a tab next to it, without menus, sidebars or ads (from the popup, or Alt+Shift+R). Text size, serif or sans-serif, and dark or light are remembered. **Save .md** downloads the article as Markdown, with its title, source URL, author and dates in the front matter; **Save .zip** packs the Markdown with the article's images in an `images/` folder, linked by relative paths (an image that can't be downloaded keeps its web address). **Copy Markdown** copies the same text as Save .md. The article is found with Mozilla's [Readability](https://github.com/mozilla/readability), the library behind Firefox's reader view, and nothing leaves your browser.
 
 #### ✨ Summarize
 Summarizes the current page with OpenAI, Anthropic or xAI, using your own API key. Pick a length: a few sentences, bullet points, or a detailed summary. The model can be changed per provider. Only the page's main text is sent (up to 20,000 characters), and only when you click Summarize.

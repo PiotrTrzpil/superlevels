@@ -44,6 +44,7 @@
     <button data-page="bookmarks">🔖 Bookmarks</button>
   </div>
   <div class="subnav" data-group="page">
+    <button data-page="reader">📖 Reader</button>
     <button data-page="summarize">✨ Summarize</button>
     <button data-page="pip">🖼 PiP</button>
     <button data-page="music">🎵 Music</button>
@@ -592,6 +593,18 @@
         <label>Access Secret</label>
         <input type="password" id="acrSecret" placeholder="your access secret" class="field">
         <button class="btn-save btn-small" id="acrSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Reader View Page ═══ -->
+  <div class="page" id="page-reader">
+    <div class="page-body">
+      <button class="btn-save" id="readerBtn" style="width:100%;padding:8px;font-size:13px;">📖 Open in reader view</button>
+      <div class="pip-status" id="readerStatus"></div>
+      <div class="xdim-note" style="margin-top:10px">
+        Opens the article on the current tab, without the clutter, in a tab next to it. Save it from there as a Markdown file, or copy it as Markdown.
+        <span id="readerShortcut"></span>
       </div>
     </div>
   </div>

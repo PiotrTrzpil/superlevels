@@ -16,6 +16,7 @@ import { loadAcrFields, loadMusicHistory } from "./features/music.js";
 import { loadNoCookie } from "./features/nocookie.js";
 import { loadPhotopea } from "./features/photopea.js";
 import { enterPiP } from "./features/pip.js";
+import { loadReader } from "./features/reader.js";
 import { loadRedirects } from "./features/redirects.js";
 import { loadSummarize } from "./features/summarize.js";
 import { loadTrackers } from "./features/trackers.js";
@@ -57,6 +58,7 @@ const PAGE_LOADERS = {
   trackers: [loadTrackers],
   toggles: [loadJsToggle, loadJsonFormat],
   bookmarks: [loadBookmarkBridge],
+  reader: [loadReader],
   summarize: [loadSummarize],
   music: [loadMusicHistory, loadAcrFields],
 };

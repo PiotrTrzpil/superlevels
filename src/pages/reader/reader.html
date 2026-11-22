@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>📖 Reader</title>
+  <link rel="icon" href="/assets/icons/icon16.png">
+  <link rel="stylesheet" href="../../shared/theme.css">
+  <link rel="stylesheet" href="reader.css">
+</head>
+<body>
+  <header class="bar">
+    <a id="original" class="bar-link" title="Back to the original page">↩ Original</a>
+    <span class="spacer"></span>
+    <button id="fontSmaller" title="Smaller text">A−</button>
+    <button id="fontLarger" title="Larger text">A+</button>
+    <button id="fontFamily" title="Switch between serif and sans-serif">Serif</button>
+    <button id="theme" title="Switch between dark and light">Light</button>
+    <button id="copyMd" title="Copy the article as Markdown">Copy Markdown</button>
+    <button id="saveZip" title="Download a .zip with the article as Markdown and its images in images/">Save .zip</button>
+    <button id="saveMd" class="primary" title="Download the article as a .md file">Save .md</button>
+  </header>
+
+  <main id="reader">
+    <p class="state" id="state">Loading…</p>
+    <article id="article" hidden>
+      <h1 id="title"></h1>
+      <p class="meta" id="meta"></p>
+      <div id="content"></div>
+    </article>
+  </main>
+
+  <script type="module" src="reader.js"></script>
+</body>
+</html>

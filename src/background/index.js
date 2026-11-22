@@ -8,6 +8,7 @@ import "./tabcleaner.js";
 import "./closed-tabs.js";
 import "./redirects.js";
 import "./pip.js";
+import "./reader.js";
 import "./photopea.js";
 import "./archive.js";
 import "./adblock.js";
