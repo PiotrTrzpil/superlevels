@@ -82,6 +82,36 @@ describe("Trackers panel", () => {
     }
   });
 
+  test("a blocked tracker still loads on its own company's sites", needsDb, async () => {
+    await setSettings({ trackers_blocked: ["twitter"] });
+    const own = await ext.context.newPage();
+    const other = await ext.context.newPage();
+    try {
+      const loads = async (page, url) => {
+        await page.goto(url);
+        // no-cors: the routed reply has no CORS headers, so only a block rejects
+        return page.evaluate(() => fetch("https://abs.twimg.com/main.js", { mode: "no-cors" }).then(() => true, () => false));
+      };
+      assert.equal(await loads(own, "https://x.com/home"), true, "x.com's own bundle on twimg.com was blocked");
+      assert.equal(await loads(other, PAGE_URL), false, "twimg.com should stay blocked on other sites");
+    } finally {
+      await own.close();
+      await other.close();
+      await setSettings({ trackers_blocked: [] });
+    }
+  });
+
+  test("an allowed site lifts tracker blocks with Ad Block off", async () => {
+    await setSettings({ trackers_blocked_hosts: ["px.unknown-thirdparty.example"], adblock_paused: ["example.org"] });
+    try {
+      const { page, data } = await visit();
+      await page.close();
+      assert.deepEqual(blockedHosts(data), []);
+    } finally {
+      await setSettings({ trackers_blocked_hosts: [], adblock_paused: [] });
+    }
+  });
+
   test("blocks an unknown third-party host", async () => {
     await setSettings({ trackers_blocked_hosts: ["px.unknown-thirdparty.example"] });
     try {

@@ -2,6 +2,7 @@
 //  Trackers
 // ═══════════════════════════════════
 import { activeTab } from "../lib/tabs.js";
+import { isSiteAllowed, setSiteAllowed, siteOf } from "../lib/site-allow.js";
 import { TRACKER_INFO } from "./tracker-info.js";
 
 const TRACKER_CATEGORIES = {
@@ -20,12 +21,18 @@ const trkHostEl = document.getElementById("trkHost");
 const trkList = document.getElementById("trkList");
 const trkNote = document.getElementById("trkNote");
 const trkReload = document.getElementById("trkReload");
+const trkAllowRow = document.getElementById("trkAllowRow");
+const trkAllow = document.getElementById("trkAllow");
 
 let trkTabId = null;
+let trkSite = "";
 
 export async function loadTrackers() {
   const tab = await activeTab();
   trkTabId = tab?.id ?? null;
+  trkSite = siteOf(tab?.url);
+  trkAllowRow.hidden = !trkSite;
+  trkAllow.checked = await isSiteAllowed(trkSite);
   const data = trkTabId === null ? null : await chrome.runtime.sendMessage({ type: "trackersForTab", tabId: trkTabId });
   renderTrackers(data);
 }
@@ -120,6 +127,8 @@ function renderTrackers(data) {
     trkNote.textContent = "Names and categories need the tracker database (optional): run pnpm build:trackers in the extension folder, then reload the extension. Blocks apply after a reload.";
   }
 }
+
+trkAllow.addEventListener("change", () => setSiteAllowed(trkSite, trkAllow.checked));
 
 trkReload.addEventListener("click", () => {
   if (trkTabId !== null) chrome.tabs.reload(trkTabId);

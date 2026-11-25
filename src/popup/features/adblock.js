@@ -3,6 +3,7 @@
 // ═══════════════════════════════════
 import { activeTab } from "../lib/tabs.js";
 import { showStatus } from "../lib/toggle.js";
+import { isSiteAllowed, setSiteAllowed, siteOf } from "../lib/site-allow.js";
 
 const adblockToggle = document.getElementById("adblockToggle");
 const adblockStatus = document.getElementById("adblockStatus");
@@ -18,24 +19,20 @@ let adblockHost = "";
 
 export async function loadAdblock() {
   const tab = await activeTab();
-  adblockHost = "";
-  try {
-    const url = new URL(tab?.url);
-    if (/^https?:$/.test(url.protocol)) adblockHost = url.hostname.replace(/^www\./, "");
-  } catch {}
+  adblockHost = siteOf(tab?.url);
   adblockHostEl.textContent = adblockHost ? `Current site: ${adblockHost}` : "Blocks ads and trackers";
 
   const [data, meta] = await Promise.all([
-    chrome.storage.local.get(["adblock_enabled", "adblock_paused", "adblock_extras"]),
+    chrome.storage.local.get(["adblock_enabled", "adblock_extras"]),
     // Written by scripts/build-adblock.mjs; missing until the lists are built
     fetch("/data/adblock/meta.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
   const enabled = data.adblock_enabled !== false;
-  const paused = data.adblock_paused || [];
   adblockToggle.checked = enabled && !!meta;
   adblockToggle.disabled = !meta;
-  adblockPause.checked = paused.some((h) => adblockHost === h || adblockHost.endsWith("." + h));
-  adblockPause.disabled = !adblockHost || !meta;
+  adblockPause.checked = await isSiteAllowed(adblockHost);
+  // Works without the lists too: it also lifts the Trackers panel's blocks
+  adblockPause.disabled = !adblockHost;
   adblockBuild.textContent = meta
     ? `Lists built ${new Date(meta.builtAt).toLocaleDateString()}: ${meta.rules.toLocaleString()} rules.`
     : "Not set up. Ad Block is optional: build the filter lists with pnpm build:adblock in the extension folder, then reload the extension.";
@@ -111,14 +108,4 @@ adblockToggle.addEventListener("change", () => {
   updateCookieListState();
 });
 
-adblockPause.addEventListener("change", async () => {
-  if (!adblockHost) return;
-  const { adblock_paused = [] } = await chrome.storage.local.get(["adblock_paused"]);
-  // Unpausing also clears any parent-domain entry that covered this host
-  const rest = adblock_paused.filter((h) => !(adblockHost === h || adblockHost.endsWith("." + h)));
-  await chrome.storage.local.set({ adblock_paused: adblockPause.checked ? [...rest, adblockHost] : rest });
-  // Wait until the background has swapped the rules, then reload to apply
-  await chrome.runtime.sendMessage({ type: "adblockSync" });
-  const tab = await activeTab();
-  if (tab) chrome.tabs.reload(tab.id);
-});
+adblockPause.addEventListener("change", () => setSiteAllowed(adblockHost, adblockPause.checked));

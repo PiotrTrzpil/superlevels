@@ -214,6 +214,7 @@ select.field { width: auto; margin-bottom: 0; }
 }
 .toggle-row label { font-size: 13px; font-weight: 500; }
 .toggle-row .switch { flex-shrink: 0; }
+.toggle-row[hidden] { display: none; }
 .toggle-text { flex: 1; min-width: 0; margin-right: 12px; }
 .switch { position: relative; width: 36px; height: 20px; }
 .switch input { opacity: 0; width: 0; height: 0; }

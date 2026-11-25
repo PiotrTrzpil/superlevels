@@ -98,10 +98,12 @@ async function doSyncAdblock() {
   const dnr = chrome.declarativeNetRequest;
 
   await loadAdblockRules(enabled ? meta.version : null, extras);
-  // Paused sites: allow everything in pages whose top frame is on that site
+  // Allowed (paused) sites: allow everything in pages whose top frame is on
+  // that site. Kept with Ad Block off too, since it also outranks the
+  // Trackers panel's blocks (priority 1).
   await dnr.updateDynamicRules({
     removeRuleIds: [ADBLOCK_PAUSE_RULE_ID],
-    addRules: enabled && paused.length ? [{
+    addRules: paused.length ? [{
       id: ADBLOCK_PAUSE_RULE_ID,
       priority: 100,
       action: { type: "allowAllRequests" },

@@ -431,8 +431,8 @@
         <div class="feat-body">
           <div class="toggle-row">
             <div class="toggle-text">
-              <label>Pause on this site</label>
-              <div class="opt-desc">Turns Ad Block off on this site and its subdomains, then reloads the page. Use it when a site breaks.</div>
+              <label>Allow ads and trackers on this site</label>
+              <div class="opt-desc">Blocks nothing on this site and its subdomains, neither Ad Block nor your tracker switches, then reloads the page. Use it when a site breaks.</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="adblockPause">
@@ -502,6 +502,16 @@
         <button class="trk-reload" id="trkReload" title="Reload the page to apply changes">↻ Reload page</button>
       </div>
       <div class="livecss-host" id="trkHost"></div>
+      <div class="toggle-row" id="trkAllowRow">
+        <div class="toggle-text">
+          <label>Allow all on this site</label>
+          <div class="opt-desc">Blocks no ads or trackers on this site and its subdomains, then reloads the page. Same switch as in Ad Block.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="trkAllow">
+          <span class="slider"></span>
+        </label>
+      </div>
       <div id="trkList"></div>
       <div class="xdim-note" id="trkNote" style="margin-top:10px"></div>
     </div>
