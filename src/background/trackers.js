@@ -36,6 +36,23 @@ function trackerIdFor(db, host) {
   return null;
 }
 
+// Company name, or the tracker id when the db names none
+function companyOf(db, id) {
+  return db.trackers[id]?.[2] ?? id;
+}
+
+// { [company]: Set of every domain of its trackers }
+function companyDomainsOf(db) {
+  const map = new Map();
+  if (!db) return map;
+  for (const [domain, id] of Object.entries(db.domains)) {
+    const company = companyOf(db, id);
+    if (!map.has(company)) map.set(company, new Set());
+    map.get(company).add(domain);
+  }
+  return map;
+}
+
 // ── Per-tab traffic log ──
 // { [tabId]: { page: host, hosts: { [host]: [requests, blocked] } } }
 // Mirrored to storage.session so a service worker restart doesn't wipe it.
@@ -118,15 +135,35 @@ async function doSyncTrackerRules() {
       if (trackers.has(id)) domains.add(domain);
     }
   }
-  const sorted = [...domains].sort();
+
+  // A company's own sites load from its other domains (x.com runs on twimg.com,
+  // youtube.com on ytimg.com), which "thirdParty" alone counts as third-party.
+  // So each company's blocked domains get a rule that spares its own sites.
+  const companyDomains = companyDomainsOf(db);
+  const groups = new Map(); // company ("" = unknown host) → blocked domains
+  for (const domain of domains) {
+    const id = db && trackerIdFor(db, domain);
+    const company = id ? companyOf(db, id) : "";
+    if (!groups.has(company)) groups.set(company, []);
+    groups.get(company).push(domain);
+  }
+
   const addRules = [];
-  for (let i = 0; i < sorted.length; i += TRACKER_DOMAINS_PER_RULE) {
-    addRules.push({
-      id: TRACKER_RULES.first + addRules.length,
-      priority: 1, // same as Ad Block's blocks, so list exceptions and the per-site pause still win
-      action: { type: "block" },
-      condition: { requestDomains: sorted.slice(i, i + TRACKER_DOMAINS_PER_RULE), domainType: "thirdParty" },
-    });
+  for (const [company, blocked] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+    const sorted = blocked.sort();
+    const own = company ? [...companyDomains.get(company)].sort() : [];
+    for (let i = 0; i < sorted.length; i += TRACKER_DOMAINS_PER_RULE) {
+      addRules.push({
+        id: TRACKER_RULES.first + addRules.length,
+        priority: 1, // same as Ad Block's blocks, so list exceptions and the per-site pause still win
+        action: { type: "block" },
+        condition: {
+          requestDomains: sorted.slice(i, i + TRACKER_DOMAINS_PER_RULE),
+          domainType: "thirdParty",
+          ...(own.length && { excludedInitiatorDomains: own }),
+        },
+      });
+    }
   }
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   await chrome.declarativeNetRequest.updateDynamicRules({
