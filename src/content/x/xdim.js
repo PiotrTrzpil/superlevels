@@ -281,12 +281,12 @@ function stopShadowTimer() {
   if (_shadowTimer) { clearInterval(_shadowTimer); _shadowTimer = 0; }
 }
 
-// Inject CSS immediately (gated by html.x-dim-active so inert until class added)
-ensureBaseCSS();
-
-// Optimistic early apply
-if (localStorage.getItem("__xdm_enabled") !== "0" &&
+// Optimistic early apply, only when Dim was on at the last visit. When off,
+// inject nothing: its [style*=…] selectors are tested against every element
+// on each style recalc, and X restyles constantly.
+if (localStorage.getItem("__xdm_enabled") === "1" &&
     (!window.matchMedia || window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+  ensureBaseCSS();
   document.documentElement.classList.add(DIM_CLASS);
 }
 
@@ -344,6 +344,7 @@ function applyDim() {
 
 function removeDim() {
   document.documentElement.classList.remove(DIM_CLASS);
+  document.getElementById(DIM_BASE_ID)?.remove();
   stopThemeColorObserver();
   restoreThemeColor();
   stopShadowTimer();
@@ -469,6 +470,10 @@ function startObserver() {
   _observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
+function stopObserver() {
+  if (_observer) { _observer.disconnect(); _observer = undefined; }
+}
+
 function fullRescan() {
   if (_enabled && document.body) queueScan([document.body]);
 }
@@ -485,8 +490,6 @@ chrome.storage.local.get(["xdim_enabled", "xdim_theme", "xdim_customHue"], (data
   }
   try { localStorage.setItem("__xdm_enabled", _enabled ? "1" : "0"); } catch {}
 
-  ensureBaseCSS();
-
   if (_enabled) {
     const systemDark = !window.matchMedia || window.matchMedia("(prefers-color-scheme: dark)").matches;
     if (systemDark) {
@@ -497,7 +500,7 @@ chrome.storage.local.get(["xdim_enabled", "xdim_theme", "xdim_customHue"], (data
     removeDim();
   }
 
-  startObserver();
+  if (_enabled) startObserver();
   if (_enabled && document.body) startBodyObserver();
 });
 
@@ -508,9 +511,11 @@ chrome.storage.onChanged.addListener((changes) => {
     try { localStorage.setItem("__xdm_enabled", _enabled ? "1" : "0"); } catch {}
     if (_enabled) {
       _suspendedForLight = false;
+      startObserver();
       startBodyObserver();
       applyDim();
     } else {
+      stopObserver();
       stopBodyObserver();
       removeDim();
     }
@@ -518,8 +523,8 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.xdim_theme || changes.xdim_customHue) {
     if (changes.xdim_theme) _theme = changes.xdim_theme.newValue ?? "dim";
     if (changes.xdim_customHue) _customHue = changes.xdim_customHue.newValue ?? 210;
-    ensureBaseCSS();
     if (document.documentElement.classList.contains(DIM_CLASS)) {
+      ensureBaseCSS();
       syncThemeColor();
       scanShadowRoots();
     }
@@ -530,7 +535,7 @@ chrome.storage.onChanged.addListener((changes) => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "xdim_toggle") {
     _enabled = msg.enabled;
-    if (_enabled) { applyDim(); startBodyObserver(); } else { removeDim(); stopBodyObserver(); }
+    if (_enabled) { startObserver(); applyDim(); startBodyObserver(); } else { stopObserver(); removeDim(); stopBodyObserver(); }
     sendResponse({ ok: true });
   }
   if (msg.type === "xdim_query") {
