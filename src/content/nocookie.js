@@ -138,6 +138,8 @@
     .snigel-cmp-framework, #usercentrics-root, [id^="usercentrics"]
   ):not(html, body)`;
   const BUTTON = "button, [role='button'], input[type='button'], input[type='submit']";
+  // One combined query walks the DOM once instead of once per selector
+  const REJECT_SELECTOR = REJECT_SELECTORS.join(", ");
   const clicked = new WeakSet();
 
   function searchRoots() {
@@ -165,10 +167,9 @@
   }
 
   function findReject() {
-    for (const sel of REJECT_SELECTORS) {
-      for (const root of searchRoots()) {
-        const el = root.querySelector(sel);
-        if (el && !clicked.has(el)) return el;
+    for (const root of searchRoots()) {
+      for (const el of root.querySelectorAll(REJECT_SELECTOR)) {
+        if (!clicked.has(el)) return el;
       }
     }
     for (const root of searchRoots()) {
@@ -205,41 +206,59 @@
     if (el) el.remove();
   }
 
-  // Banners show up late. One scan per frame is enough, and the hide rule does not
-  // block the click: a refusal is clicked even after the dialog is display:none.
+  // Banners show up late, so DOM changes trigger a scan, but at most one per
+  // SCAN_GAP_MS, and only for SCAN_WINDOW_MS after load: a scan walks the whole
+  // DOM, and on pages that never stop changing (x.com) scanning every frame
+  // starved the page. The hide rule does not block the click: a refusal is
+  // clicked even after the dialog is display:none.
+  const SCAN_GAP_MS = 300;
+  const SCAN_WINDOW_MS = 20_000;
   let active = false;
-  let scheduled = false;
+  let scanTimer = 0;
+  let windowTimer = 0;
   let observer = null;
 
   function schedule() {
-    if (!active || scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
+    if (!active || scanTimer) return;
+    scanTimer = setTimeout(() => {
+      scanTimer = 0;
       if (active) clickReject();
-    });
+    }, SCAN_GAP_MS);
+  }
+
+  function stopWatching() {
+    observer?.disconnect();
+    observer = null;
+    clearTimeout(windowTimer);
+    windowTimer = 0;
   }
 
   function activate() {
     if (active) return;
     active = true;
     injectCSS();
-    schedule();
+    clickReject();
     observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true });
+    windowTimer = setTimeout(stopWatching, SCAN_WINDOW_MS);
   }
 
   function deactivate() {
     active = false;
-    scheduled = false;
-    observer?.disconnect();
-    observer = null;
+    clearTimeout(scanTimer);
+    scanTimer = 0;
+    stopWatching();
     removeCSS();
   }
 
+  // Sites the user lets show their banner (popup: "Allow cookie banners on this
+  // site"); an entry covers its subdomains
+  const site = location.hostname.replace(/^www\./, "");
+  const allowedHere = (list = []) => list.some((h) => site === h || site.endsWith("." + h));
+
   // Check storage and apply
-  chrome.storage.local.get(["nocookie_enabled"], (data) => {
-    if (data.nocookie_enabled !== false) activate();
+  chrome.storage.local.get(["nocookie_enabled", "nocookie_allowed_sites"], (data) => {
+    if (data.nocookie_enabled !== false && !allowedHere(data.nocookie_allowed_sites)) activate();
   });
 
   // Listen for toggle from popup
