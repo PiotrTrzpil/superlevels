@@ -118,7 +118,7 @@
   }
 
   chrome.storage.local.get(["xreply_enabled"], (data) => {
-    _enabled = data.xreply_enabled !== false;
+    _enabled = data.xreply_enabled === true;
     if (_enabled) start();
   });
 

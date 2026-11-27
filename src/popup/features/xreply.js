@@ -6,6 +6,7 @@ import { featureToggle } from "../lib/toggle.js";
 
 export const loadXReply = featureToggle({
   key: "xreply_enabled",
+  defaultOn: false,
   toggle: document.getElementById("xreplyToggle"),
   status: document.getElementById("xreplyStatus"),
   onChange: (enabled) => sendToActiveTab({ type: "xreply_toggle", enabled }),

@@ -152,7 +152,7 @@ Brings back a dim theme for X/Twitter: Dim, Slate, Jade, Plum, Dusk, Ember, or a
 Hides the right sidebar's panels (trends, news, who to follow, Premium upsells) while keeping search.
 
 #### 𝕏 X reply audience
-When you start a new post, opens the "Who can reply?" picker and selects "Accounts you follow and who they follow" for you.
+When you start a new post, opens the "Who can reply?" picker and selects "Accounts you follow and who they follow" for you. Off by default.
 
 #### 📺 YouTube unhook
 Removes YouTube distractions, each switchable on its own: sidebar suggestions, end-screen overlays and Shorts shelves, plus a wider video player. Hiding the homepage feed is also available, off by default. Search still works — just no algorithmic recommendations.
